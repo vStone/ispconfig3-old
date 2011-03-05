@@ -190,6 +190,28 @@ $module['nav'][] = array(	'title'	=> 'Remote Actions',
 							'items'	=> $items);
 
 
+// cleanup
+unset($items);
+
+$items[] = array( 'title'   => 'Create/Update snippets',
+                  'target'  => 'content',
+                  'link'    => 'admin/web_snippet_list.php',
+                  'html_id' => 'snippet_list',);
+
+//$items[] = array( 'title'   => 'Assign snippets', 
+//                  'target'  => 'content',
+//                  'link'    => 'admin/web_snippet_assign_list.php',
+//                  'html_id' => 'snippet_assign',);
+
+$module['nav'][] = array (
+    'title' => 'Web Snippets',
+    'open' => 1,
+    'items' => $items,
+);
+
+// cleanup
+unset($items);
+
 // Getting the admin options from other modules
 $modules = explode(',', $_SESSION['s']['user']['modules']);
 if(is_array($modules)) {

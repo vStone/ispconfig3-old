@@ -1095,16 +1095,16 @@ CREATE TABLE `sys_session` (
 -- 
 
 CREATE TABLE `web_domain` (
-  `domain_id` int(11) unsigned NOT NULL auto_increment,
-  `sys_userid` int(11) unsigned NOT NULL default '0',
-  `sys_groupid` int(11) unsigned NOT NULL default '0',
-  `sys_perm_user` varchar(5) default NULL,
-  `sys_perm_group` varchar(5) default NULL,
-  `sys_perm_other` varchar(5) default NULL,
-  `server_id` int(11) unsigned NOT NULL default '0',
-  `ip_address` varchar(39) default NULL,
-  `domain` varchar(255) default NULL,
-  `type` varchar(32) default NULL,
+  `domain_id` int(11) unsigned NOT NULL auto_increment COMMENT 'Unique ID for this domain.',
+  `sys_userid` int(11) unsigned NOT NULL default '0' COMMENT 'System user ID who owns this domain. Default is admin user.',
+  `sys_groupid` int(11) unsigned NOT NULL default '0' COMMENT 'System group ID who owns this domain. Default is admin user.',
+  `sys_perm_user` varchar(5) default NULL COMMENT '@TODO: Figure out what this does',
+  `sys_perm_group` varchar(5) default NULL COMMENT '@TODO: Figure out what this does',
+  `sys_perm_other` varchar(5) default NULL COMMENT '@TODO: Figure out what this does',
+  `server_id` int(11) unsigned NOT NULL default '0' COMMENT 'Server id to run this domain on',
+  `ip_address` varchar(39) default NULL COMMENT 'IP Address to listen/respond to',
+  `domain` varchar(255) default NULL COMMENT 'Domain name',
+  `type` varchar(32) default NULL COMMENT '@TODO: Figure out what this does',
   `parent_domain_id` int(11) unsigned NOT NULL default '0',
   `vhost_type` varchar(32) default NULL,
   `document_root` varchar(255) default NULL,
@@ -1657,5 +1657,35 @@ INSERT INTO `help_faq` VALUES (1,1,0,'I\'d like to know ...','Yes, of course.',1
 ALTER TABLE client ADD COLUMN company_id varchar(30);
 
 -- --------------------------------------------------------
+--
+-- Table structure for table `web_snippet`
+--
+
+CREATE TABLE IF NOT EXISTS `web_snippet` (
+  `snippet_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `comment` mediumtext,
+  `content` mediumtext,
+  PRIMARY KEY (`snippet_id`),
+  KEY (`version_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `web_snippet_domains`
+--
+
+CREATE TABLE IF NOT EXISTS `web_snippet_domains` (
+  `snipdom_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `snippet_id` int(11) unsigned NOT NULL,
+  `version_id` int(11) unsigned NOT NULL,
+  `domain_id` int(11) unsigned NOT NULL,
+  `do_ssl` VARCHAR( 1 ) NOT NULL DEFAULT 'b' COMMENT 'Specify if you want to enable this snippet for ''s''sl or ''n''ot or ''b''oth (choose s,n,b)',
+  PRIMARY KEY (`snipdom_id`),
+  KEY `snippet_id` (`snippet_id`),
+  KEY `domain_id` (`domain_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=1 ;
+
 
 SET FOREIGN_KEY_CHECKS = 1;
