@@ -1138,6 +1138,7 @@ CREATE TABLE `web_domain` (
   `stats_type` varchar(255) default 'webalizer',
   `allow_override` varchar(255) NOT NULL default 'All',
   `apache_directives` mediumtext,
+  `apache_directives_ssl` mediumtext,
   `php_open_basedir` mediumtext,
   `custom_php_ini` mediumtext,
   `backup_interval` VARCHAR( 255 ) NOT NULL DEFAULT 'none',
