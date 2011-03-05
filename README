@@ -1,0 +1,32 @@
+INTRODUCTION
+
+  This is a fork of the original ISPConfig 3 svn repository. 
+
+  Information on ISPConfig can be found here:
+
+    * Website:    http://www.ispconfig.org
+    * Forum:      http://howtoforge.com/forums/forumdisplay.php?f=23
+    * Bugtracker: http://bugtracker.ispconfig.org/index.php?project=3
+    * SVN:        svn://svn.ispconfig.org/ispconfig3/trunk
+
+  I have created this fork to do some personal coding on ispconfig3.
+  The finished improvements/patches will be sent upstream.
+
+
+BRANCHES
+
+  master: 
+    In this branch, I tend to merge all other branches that are deemed i
+    to be finished.
+
+  upstream: 
+    This branch is kept in sync with the svn repository.
+
+  getmail-readall:
+    Adjustments to allow users to select the 'read all' option when 
+    running getmail. With this set to on, read emails will also be 
+    fetch from the remote mailserver.
+
+  apache_ssl_directives:
+    Split out the 'Apache Directives' section. HTTP and HTTPS now can 
+    have 2 both entirely different directives sections.
