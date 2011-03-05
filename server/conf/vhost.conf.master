@@ -455,7 +455,7 @@
       # WEBDAV END
     </IfModule>
 
-<tmpl_var name='apache_directives'>
+<tmpl_var name='apache_directives_ssl'>
 </VirtualHost>
 </IfModule>
 
