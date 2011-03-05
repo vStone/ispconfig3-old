@@ -1,0 +1,22 @@
+<?php
+$wb['warning'] = '¡Tenga cuidado al  modificar estos valores! No elimine los prefijos en un sistema que tenga más de un cliente.';
+$wb['dbname_prefix_txt'] = 'Prefijo del nombre de la base de datos';
+$wb['dbuser_prefix_txt'] = 'Prefijo del usuario de la base de datos';
+$wb['shelluser_prefix_txt'] = 'Prefijo del usuario de la consola';
+$wb['ftpuser_prefix_txt'] = 'Prefijo del usuario FTP';
+$wb['dbname_prefix_error_regex'] = 'Caracteres no permitidos en el prefijo del nombre de la base de datos.';
+$wb['dbuser_prefix_error_regex'] = 'Caracteres no permitidos en el prefijo del usuario de la base de datos.';
+$wb['ftpuser_prefix_error_regex'] = 'Caracteres no permitidos en el prefijo del usuario FTP.';
+$wb['shelluser_prefix_error_regex'] = 'Caracteres no permitidos en el prefijo del usuario de la consola.';
+$wb['dblist_phpmyadmin_link_txt'] = 'Enlace a phpmyadmin en la lista de bases de datos';
+$wb['mailboxlist_webmail_link_txt'] = 'Enlace al correo web en la lista de buzones de correo';
+$wb['webmail_url_txt'] = 'Webmail URL';
+$wb['phpmyadmin_url_txt'] = 'PHPMyAdmin URL';
+$wb['use_domain_module_txt'] = 'Use the domain-module to add new domains';
+$wb['use_domain_module_hint'] = 'If you use this module, your customers can only select one of the domains the admin creates for them. They can not free edit the domain-field.You have to re-login after changing this value, to make the changes visible.';
+$wb['new_domain_txt'] = 'HTML to create a new domain';
+$wb['dashboard_atom_url_txt'] = 'Dashboard atom feed URL';
+$wb['webdavuser_prefix_txt'] = 'Webdav user prefix';
+$wb['webdavuser_prefix_error_regex'] = 'Char not allowed in webdav user prefix.';
+$wb['webftp_url_txt'] = 'WebFTP URL';
+?>

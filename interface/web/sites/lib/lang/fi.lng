@@ -1,0 +1,24 @@
+<?php
+$wb['Database'] = 'Tietokanta';
+$wb['Options'] = 'Asetukset';
+$wb['Shell User'] = 'Shell-käyttäjä';
+$wb['Domain'] = 'Verkkotunnus';
+$wb['Redirect'] = 'Edelleenohjaus';
+$wb['SSL'] = 'SSL';
+$wb['Subdomain'] = 'Aliverkkotunnus';
+$wb['Sites'] = 'Verkkotunnukset';
+$wb['Aliasdomain'] = 'Aliasverkkotunnus';
+$wb['FTP-User'] = 'FTP-käyttäjätunnus';
+$wb['FTP'] = 'FTP';
+$wb['Shell-User'] = 'Shell-käyttäjä';
+$wb['Shell'] = 'Shell';
+$wb['Websites'] = 'Verkkotunnukset';
+$wb['Stats'] = 'Tilastot';
+$wb['Website'] = 'WWW-sivu';
+$wb['Cron'] = 'Ajastukset';
+$wb['Cron Jobs'] = 'Ajastetut tehtävät';
+$wb['Statistics'] = 'Tilastot';
+$wb['Web traffic'] = 'WWW-liikenne';
+$wb['Webdav-User'] = 'Webdav User';
+$wb['Webdav'] = 'Webdav';
+?>
