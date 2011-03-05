@@ -108,7 +108,13 @@ class getmail_plugin {
 				} else {
 					$tpl = str_replace('{DELETE}','0',$tpl);
 				}
-				
+			
+				if($data["new"]["read_all"] == 'y') {
+					$tpl = str_replace('{READ_ALL}', '1', $tpl);
+				} else {
+					$tpl = str_replace('{READ_ALL}', '0', $tpl);
+				}
+	
 				// Set the data retriever
 				if($data["new"]["type"] == 'pop3') {
 					$tpl = str_replace('{TYPE}','SimplePOP3Retriever',$tpl);
