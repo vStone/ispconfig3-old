@@ -61,12 +61,3 @@ $liste['item'][] = array(
     'width' => '',
 );
 
-$liste['item'][] = array(
-    'field' => 'version_id',
-    'datatype' => 'INTEGER',
-    'op' => '=',
-    'prefix' => '',
-    'suffix' => '',
-    'width' => 11,
-);
-

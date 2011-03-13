@@ -1679,7 +1679,6 @@ CREATE TABLE IF NOT EXISTS `web_snippet` (
 CREATE TABLE IF NOT EXISTS `web_snippet_domains` (
   `snipdom_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `snippet_id` int(11) unsigned NOT NULL,
-  `version_id` int(11) unsigned NOT NULL,
   `domain_id` int(11) unsigned NOT NULL,
   `do_ssl` VARCHAR( 1 ) NOT NULL DEFAULT 'b' COMMENT 'Specify if you want to enable this snippet for ''s''sl or ''n''ot or ''b''oth (choose s,n,b)',
   PRIMARY KEY (`snipdom_id`),
