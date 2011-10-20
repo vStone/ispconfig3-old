@@ -325,6 +325,14 @@ $form["tabs"]['limits'] = array (
 			'rows'		=> '',
 			'cols'		=> ''
 		),
+		'web_php_options' => array (
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'CHECKBOXARRAY',
+			'default'	=> '',
+			'separator' => ',',
+			'valuelimit' => 'client:web_php_options',
+			'value'		=> array('no' => 'Disabled', 'fast-cgi' => 'Fast-CGI', 'cgi' => 'CGI', 'mod' => 'Mod-PHP', 'suphp' => 'SuPHP')
+		),
 		'limit_web_aliasdomain' => array (
 			'datatype'	=> 'INTEGER',
 			'formtype'	=> 'TEXT',
@@ -380,6 +388,14 @@ $form["tabs"]['limits'] = array (
 			'maxlength'	=> '10',
 			'rows'		=> '',
 			'cols'		=> ''
+		),
+		'ssh_chroot' => array (
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'CHECKBOXARRAY',
+			'default'	=> '',
+			'separator' => ',',
+			'valuelimit' => 'client:ssh_chroot',
+			'value'		=> array('no' => 'None', 'jailkit' => 'Jailkit')
 		),
 		'limit_webdav_user' => array (
 			'datatype'	=> 'INTEGER',
@@ -514,6 +530,31 @@ $form["tabs"]['limits'] = array (
 			'maxlength'	=> '10',
 			'rows'		=> '',
 			'cols'		=> ''
+		),
+		'limit_openvz_vm' => array (
+			'datatype'	=> 'INTEGER',
+			'formtype'	=> 'TEXT',
+			'validators'	=> array ( 	0 => array (	'type'	=> 'ISINT',
+														'errmsg'=> 'limit_openvz_vm_error_notint'),
+									),
+			'default'	=> '0',
+			'value'		=> '',
+			'separator'	=> '',
+			'width'		=> '10',
+			'maxlength'	=> '10',
+			'rows'		=> '',
+			'cols'		=> ''
+		),
+		'limit_openvz_vm_template_id' => array (
+			'datatype'	=> 'INTEGER',
+			'formtype'	=> 'SELECT',
+			'default'	=> '',
+			'datasource'	=> array ( 	'type'	=> 'SQL',
+										'querystring' => 'SELECT template_id,template_name FROM openvz_template WHERE 1 ORDER BY template_name',
+										'keyfield'=> 'template_id',
+										'valuefield'=> 'template_name'
+									 ),
+			'value'		=> array(0 => ' ')
 		),
 	##################################
 	# END Datatable fields

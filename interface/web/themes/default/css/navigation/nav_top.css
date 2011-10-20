@@ -38,7 +38,7 @@
 		padding-top:37px;
 		text-align:center;
 		text-decoration:none;
-		width:97px;
+		width:78px;
 	}
 	
 	#topNav a:hover {
@@ -101,6 +101,10 @@
 	
 	.topnav-vm{
 		background-image: url('../../icons/x32/drawer.png') !important;
+	}
+	
+	.topnav-billing{
+		background-image: url('../../icons/x32/calculator.png') !important;
 	}
 
 }

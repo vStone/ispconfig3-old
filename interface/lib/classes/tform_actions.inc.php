@@ -139,7 +139,7 @@ class tform_actions {
                                 session_write_close();
                                 header($redirect);
 							// When a returnto variable is set
-							} elseif ($_SESSION["s"]["form"]["return_to_url"] != '') {
+							} elseif (isset($_SESSION["s"]["form"]["return_to_url"]) && $_SESSION["s"]["form"]["return_to_url"] != '') {
 								$redirect = $_SESSION["s"]["form"]["return_to_url"];
 								$_SESSION["s"]["form"]["return_to_url"] = '';
 								session_write_close();
@@ -315,13 +315,14 @@ class tform_actions {
 						$next_tab = $app->tform->getCurrentTab();
                 		$this->loadPlugins($next_tab);
 						
-						
+                	
                         // Call plugin
                         foreach($this->plugins as $plugin) {
                                 $plugin->onDelete();
                         }
 						
 						$this->onAfterDelete();
+						$app->plugin->raiseEvent($_SESSION['s']['module']['name'].':'.$app->tform->formDef['name'].':'.'on_after_delete',$this);
                 }
 
                 		//header("Location: ".$liste["file"]."?PHPSESSID=".$_SESSION["s"]["id"]);
@@ -536,7 +537,7 @@ class tform_actions {
                         if(!$record = $app->db->queryOneRecord($sql)) $app->error($app->lng('error_no_view_permission'));
                 } else {
                         // $record = $app->tform->encode($_POST,$this->active_tab);
-						$record = $app->tform->encode($this->dataRecord,$this->active_tab);
+						$record = $app->tform->encode($this->dataRecord,$this->active_tab,false);
                 }
 
                 $this->dataRecord = $record;

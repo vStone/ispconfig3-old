@@ -95,7 +95,7 @@ class remoteaction_core_module {
 		 * stop a service, a admin stopped some days before! To avoid this, we ignore
 		 * the status (it is only for the interface to show) and use our own maxid
 		*/
-		include_once (dirname(__FILE__) .  "/../lib/remote_action.inc.php");
+		include_once (SCRIPT_PATH."/lib/remote_action.inc.php");
 
 		/*
 		 * Get all actions this server should execute
@@ -126,6 +126,45 @@ class remoteaction_core_module {
 					* we stop executing the actions not to waste more time */
 					return;
 				}
+				if ($action['action_type'] == 'openvz_start_vm') {
+					$veid = intval($action['action_param']);
+					if($veid > 0) {
+						exec("vzctl start $veid");
+					}
+					$this->_actionDone($action['action_id'], 'ok');
+				}
+				if ($action['action_type'] == 'openvz_stop_vm') {
+					$veid = intval($action['action_param']);
+					if($veid > 0) {
+						exec("vzctl stop $veid");
+					}
+					$this->_actionDone($action['action_id'], 'ok');
+				}
+				if ($action['action_type'] == 'openvz_restart_vm') {
+					$veid = intval($action['action_param']);
+					if($veid > 0) {
+						exec("vzctl restart $veid");
+					}
+					$this->_actionDone($action['action_id'], 'ok');
+				}
+				if ($action['action_type'] == 'openvz_create_ostpl') {
+					$parts = explode(':',$action['action_param']);
+					$veid = intval($parts[0]);
+					$template_cache_dir = '/vz/template/cache/';
+					$template_name = escapeshellcmd($parts[1]);
+					if($veid > 0 && $template_name != '' && is_dir($template_cache_dir)) {
+						$command = "vzdump --suspend --compress --stdexcludes --dumpdir $template_cache_dir $veid";
+						exec($command);
+						exec("mv ".$template_cache_dir."vzdump-openvz-".$veid."*.tgz ".$template_cache_dir.$template_name.".tar.gz");
+						exec("rm -f ".$template_cache_dir."vzdump-openvz-".$veid."*.log");
+					}
+					$this->_actionDone($action['action_id'], 'ok');
+					/* this action takes so much time,
+					* we stop executing the actions not to waste more time */
+					return;
+				}
+				
+				
 			}
 		}
 	}
@@ -134,13 +173,16 @@ class remoteaction_core_module {
 		/*
 		 * Do the update
 		 */
+		exec("aptitude update");
+		exec("aptitude safe-upgrade -y");
+
 		//TODO : change this when distribution information has been integrated into server record
 		if(file_exists('/etc/gentoo-release')) {
 			exec("glsa-check -f --nocolor affected");
 		}
 		else {
 			exec("aptitude update");
-			exec("aptitude upgrade -y");
+			exec("aptitude safe-upgrade -y");
 		}
 		
 		/*
@@ -179,17 +221,16 @@ class remoteaction_core_module {
 		exec("tar xvfz ISPConfig-" . $new_version . ".tar.gz");
 
 		/*
-		 * Start the automated update
+		 * Initialize the automated update
+		 * (the update is then done next start of server.sh
 		 */
 		chdir("/tmp/ispconfig3_install/install");
 		exec("touch autoupdate");
-		exec("php -q autoupdate.php");
-
+		
 		/*
 		 * do some clean-up
 		 */
 		exec("rm /tmp/ISPConfig-" . $new_version . ".tar.gz");
-		exec("rm /tmp/ispconfig3_install -R");
 
 		/*
 		 * go back to the "old path"

@@ -75,7 +75,7 @@ class page_action extends tform_actions {
 		$app->tpl->setVar("email_local_part",$email_parts[0]);
 		
 		// Getting Domains of the user
-		$sql = "SELECT domain FROM mail_domain WHERE ".$app->tform->getAuthSQL('r').' ORDER BY domain';
+		$sql = "SELECT domain, server_id FROM mail_domain WHERE ".$app->tform->getAuthSQL('r').' ORDER BY domain';
 		$domains = $app->db->queryAllRecords($sql);
 		$domain_select = '';
 		if(is_array($domains)) {
@@ -112,6 +112,14 @@ class page_action extends tform_actions {
 			$app->tpl->setVar("ar_active", 'checked="checked"');
 		} else {
 			$app->tpl->setVar("ar_active", '');
+		}
+		
+    $app->uses('getconf');
+    $mail_config = $app->getconf->get_global_config('mail');
+		if($mail_config["enable_custom_login"] == "y") {
+		    $app->tpl->setVar("enable_custom_login", 1);
+		} else {
+		    $app->tpl->setVar("enable_custom_login", 0);
 		}
 		
 		parent::onShowEnd();
@@ -165,6 +173,9 @@ class page_action extends tform_actions {
 		} // end if user is not admin
 		
 
+    $app->uses('getconf');
+    $mail_config = $app->getconf->get_server_config($domain["server_id"],'mail');
+		
 		//* compose the email field
 		if(isset($_POST["email_local_part"]) && isset($_POST["email_domain"])) {
 			$this->dataRecord["email"] = strtolower($_POST["email_local_part"]."@".$_POST["email_domain"]);
@@ -179,8 +190,6 @@ class page_action extends tform_actions {
 			if($this->dataRecord["quota"] != -1) $this->dataRecord["quota"] = $this->dataRecord["quota"] * 1024 * 1024;
 		
 			// setting Maildir, Homedir, UID and GID
-			$app->uses('getconf');
-			$mail_config = $app->getconf->get_server_config($domain["server_id"],'mail');
 			$maildir = str_replace("[domain]",$domain["domain"],$mail_config["maildir_path"]);
 			$maildir = str_replace("[localpart]",strtolower($_POST["email_local_part"]),$maildir);
 			$this->dataRecord["maildir"] = $maildir;
@@ -195,6 +204,13 @@ class page_action extends tform_actions {
 			
 		}
 		
+    $sys_config = $app->getconf->get_global_config('mail');
+    if($sys_config["enable_custom_login"] == "y") {
+        if(!isset($_POST["login"])) $this->dataRecord["login"] = $this->dataRecord["email"];
+        elseif(strpos($_POST["login"], '@') !== false && $_POST["login"] != $this->dataRecord["email"]) $app->tform->errorMessage .= $app->tform->lng("error_login_email_txt")."<br>";
+		} else {
+        $this->dataRecord["login"] = $this->dataRecord["email"];
+		}
 		//* if autoresponder checkbox not selected, do not save dates
 		if (!isset($_POST['autoresponder']) && array_key_exists('autoresponder_start_date', $_POST)) {
 			$this->dataRecord['autoresponder_start_date'] = array_map(create_function('$item','return 0;'), $this->dataRecord['autoresponder_start_date']);
@@ -210,55 +226,6 @@ class page_action extends tform_actions {
 		// Set the domain owner as mailbox owner
 		$domain = $app->db->queryOneRecord("SELECT sys_groupid, server_id FROM mail_domain WHERE domain = '".$app->db->quote($_POST["email_domain"])."' AND ".$app->tform->getAuthSQL('r'));
 		$app->db->query("UPDATE mail_user SET sys_groupid = ".$domain["sys_groupid"]." WHERE mailuser_id = ".$this->id);
-		
-		// send a welcome email to create the mailbox
-//		mail($this->dataRecord["email"],$app->tform->wordbook["welcome_mail_subject"],$app->tform->wordbook["welcome_mail_message"]);
-		
-		/*
-		// the conversion to iso-8859-1 causes compatibility problems, therefore the transition to utf-8
-
-		// tries to detect current charset, and encode subject-header and body from it to ISO-8859-1.
-		$fromCharset      = mb_detect_encoding($app->tform->lng("welcome_mail_subject"));
-		$iconvPreferences = array("input-charset" => $fromCharset,
-					"output-charset" => "ISO-8859-1",
-					"line-length" => 76,
-					"line-break-chars" => "\n",
-					"scheme" => "Q");
-
-		$welcomeFromName  = $app->tform->lng("welcome_mail_fromname_txt");
-		$welcomeFromEmail = $app->tform->lng("welcome_mail_fromemail_txt");
-		$mailHeaders      = "MIME-Version: 1.0" . "\n";
-		$mailHeaders     .= "Content-type: text/plain; charset=iso-8859-1" . "\n";
-		$mailHeaders     .= "From: $welcomeFromName  <$welcomeFromEmail>" . "\n";
-		$mailHeaders     .= "Reply-To: <$welcomeFromEmail>" . "\n";
-		$mailTarget       = $this->dataRecord["email"];
-		$mailSubject      = iconv_mime_encode("trimoff", $app->tform->lng("welcome_mail_subject"), $iconvPreferences);
-		$mailSubject      = str_replace("trimoff: ", "", $mailSubject);
-		$mailBody         = iconv ($fromCharset, "ISO-8859-1", $app->tform->lng("welcome_mail_message"));
-
-		mail($mailTarget, $mailSubject, $mailBody, $mailHeaders);
-		
-		*/
-
-		$welcomeFromName  = $app->tform->lng("welcome_mail_fromname_txt");
-		$welcomeFromEmail = $app->tform->lng("welcome_mail_fromemail_txt");
-		
-		$app->uses('getconf');
-		$global_config = $app->getconf->get_global_config('mail');
-		if(!empty($global_config['admin_mail']))$welcomeFromEmail = $global_config['admin_mail'];
-		if(!empty($global_config['admin_name']))$welcomeFromName = $global_config['admin_name'];
-
-		$mailHeaders      = "MIME-Version: 1.0" . "\n";
-		$mailHeaders     .= "Content-type: text/plain; charset=utf-8" . "\n";
-		$mailHeaders     .= "Content-Transfer-Encoding: 8bit" . "\n";
-		$mailHeaders     .= "From: $welcomeFromName  <$welcomeFromEmail>" . "\n";
-		$mailHeaders     .= "Reply-To: <$welcomeFromEmail>" . "\n";
-		$mailTarget       = $this->dataRecord["email"];
-
-		$mailSubject = "=?utf-8?Q?" . imap_8bit($app->tform->lng("welcome_mail_subject")) . "?=";
-		$mailBody = $app->tform->lng("welcome_mail_message");
-
-		mail($mailTarget, $mailSubject, $mailBody, $mailHeaders);
 		
 		// Spamfilter policy
 		$policy_id = intval($this->dataRecord["policy"]);
@@ -283,7 +250,7 @@ class page_action extends tform_actions {
 			$disabledeliver = ($this->dataRecord["postfix"] == 'y')?'n':'y';
 			$disablesmtp = ($this->dataRecord["postfix"] == 'y')?'n':'y';
 		
-			$sql = "UPDATE mail_user SET disableimap = '$disableimap', disablepop3 = '$disablepop3', disablesmtp = '$disablesmtp', disabledeliver = '$disabledeliver' WHERE mailuser_id = ".$this->id;
+			$sql = "UPDATE mail_user SET disableimap = '$disableimap', disablesieve = '$disableimap', disablepop3 = '$disablepop3', disablesmtp = '$disablesmtp', disabledeliver = '$disabledeliver', disablelda = '$disabledeliver' WHERE mailuser_id = ".$this->id;
 			$app->db->query($sql);
 		}
 	}
@@ -324,7 +291,7 @@ class page_action extends tform_actions {
 			$disabledeliver = ($this->dataRecord["postfix"] == 'y')?'n':'y';
 			$disablesmtp = ($this->dataRecord["postfix"] == 'y')?'n':'y';
 		
-			$sql = "UPDATE mail_user SET disableimap = '$disableimap', disablepop3 = '$disablepop3', disablesmtp = '$disablesmtp', disabledeliver = '$disabledeliver' WHERE mailuser_id = ".$this->id;
+			$sql = "UPDATE mail_user SET disableimap = '$disableimap', disablesieve = '$disableimap', disablepop3 = '$disablepop3', disablesmtp = '$disablesmtp', disabledeliver = '$disabledeliver', disablelda = '$disabledeliver' WHERE mailuser_id = ".$this->id;
 			$app->db->query($sql);
 		}
 		

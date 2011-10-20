@@ -64,7 +64,7 @@ if($app->auth->get_client_limit($userid,'ftp_user') != 0)
 }
 
 /*
-	FTP User menu
+	Shell User menu
 */
 if($app->auth->get_client_limit($userid,'shell_user') != 0)
 {
@@ -115,6 +115,26 @@ if($app->auth->get_client_limit($userid,'webdav_user') != 0)
 			'open' 	=> 1,
 			'items'	=> $items);
 }
+
+/*
+ *	Web folder menu
+ */
+	$items=array();
+	
+	$items[] = array( 'title' 	=> "Folder",
+			'target' 	=> 'content',
+			'link'	=> 'sites/web_folder_list.php',
+			'html_id' => 'web_folder_list');
+	
+	$items[] = array( 'title' 	=> "Folder users",
+			'target' 	=> 'content',
+			'link'	=> 'sites/web_folder_user_list.php',
+			'html_id' => 'web_folder_user_list');
+	
+	$module["nav"][] = array(	'title'	=> 'Folder protection',
+			'open' 	=> 1,
+			'items'	=> $items);
+
 
 /*
     Cron menu

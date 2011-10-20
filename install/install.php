@@ -157,6 +157,16 @@ if($install_mode == 'standard') {
 	//* Create the MySQL database
 	$inst->configure_database();
 	
+	//* Configure Webserver - Apache or nginx
+	if($conf['apache']['installed'] == true && $conf['nginx']['installed'] == true) {
+		$http_server_to_use = $inst->simple_query('Apache and nginx detected. Select server to use for ISPConfig:', array('apache','nginx'), 'apache');
+		if($http_server_to_use == 'apache'){
+			$conf['nginx']['installed'] = false;
+		} else {
+			$conf['apache']['installed'] = false;
+		}
+	}
+	
 	//* Insert the Server record into the database
 	$inst->add_database_server_record();
 
@@ -200,7 +210,6 @@ if($install_mode == 'standard') {
 	swriteln('Configuring Getmail');
 	$inst->configure_getmail();
 	
-
 	//* Configure Pureftpd
 	swriteln('Configuring Pureftpd');
 	$inst->configure_pureftpd();
@@ -218,8 +227,16 @@ if($install_mode == 'standard') {
 	}
 	
 	//* Configure Apache
-	swriteln('Configuring Apache');
-	$inst->configure_apache();
+	if($conf['apache']['installed'] == true){
+		swriteln('Configuring Apache');
+		$inst->configure_apache();
+	}
+	
+	//* Configure nginx
+	if($conf['nginx']['installed'] == true){
+		swriteln('Configuring nginx');
+		$inst->configure_nginx();
+	}
 	
     //** Configure Vlogger
     swriteln('Configuring Vlogger');
@@ -230,14 +247,38 @@ if($install_mode == 'standard') {
 	$inst->configure_apps_vhost();
     
 	//* Configure Firewall
-	swriteln('Configuring Firewall');
+	//* Configure Bastille Firewall
+	$conf['services']['firewall'] = true;
+	swriteln('Configuring Bastille Firewall');
 	$inst->configure_firewall();
 
+    //* Configure Fail2ban
+    if($conf['fail2ban']['installed'] == true) {
+        swriteln('Configuring Fail2ban');
+        $inst->configure_fail2ban();
+    }
+	
+	/*
+	if($conf['squid']['installed'] == true) {
+		$conf['services']['proxy'] = true;
+		swriteln('Configuring Squid');
+		$inst->configure_squid();
+	} else if($conf['nginx']['installed'] == true) {
+		$conf['services']['proxy'] = true;
+		swriteln('Configuring Nginx');
+		$inst->configure_nginx();
+	}
+	*/
+	
 	//* Configure ISPConfig
 	swriteln('Installing ISPConfig');
 	
 	//** Customize the port ISPConfig runs on
 	$conf['apache']['vhost_port'] = $inst->free_query('ISPConfig Port', '8080');
+
+	if(strtolower($inst->simple_query('Do you want a secure (SSL) connection to the ISPConfig web interface',array('y','n'),'y')) == 'y') {
+	  $inst->make_ispconfig_ssl_cert();
+	}
 
 	$inst->install_ispconfig();
 	
@@ -262,12 +303,19 @@ if($install_mode == 'standard') {
 	if($conf['courier']['courier-pop-ssl'] != '' && is_executable($conf['init_scripts'].'/'.$conf['courier']['courier-pop-ssl'])) 		system($conf['init_scripts'].'/'.$conf['courier']['courier-pop-ssl'].' restart');
 	if($conf['dovecot']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['dovecot']['init_script'])) 		system($conf['init_scripts'].'/'.$conf['dovecot']['init_script'].' restart');
 	if($conf['mailman']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['mailman']['init_script'])) 		system($conf['init_scripts'].'/'.$conf['mailman']['init_script'].' restart');
-	if($conf['apache']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['apache']['init_script'])) 				system($conf['init_scripts'].'/'.$conf['apache']['init_script'].' restart');
+	if($conf['apache']['installed'] == true && $conf['apache']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['apache']['init_script'])) 				system($conf['init_scripts'].'/'.$conf['apache']['init_script'].' restart');
+	//* Reload is enough for nginx
+	if($conf['nginx']['installed'] == true){
+		if($conf['nginx']['php_fpm_init_script'] != '' && @is_file($conf['init_scripts'].'/'.$conf['nginx']['php_fpm_init_script'])) system($conf['init_scripts'].'/'.$conf['nginx']['php_fpm_init_script'].' reload');
+		if($conf['nginx']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['nginx']['init_script'])) 				system($conf['init_scripts'].'/'.$conf['nginx']['init_script'].' reload');
+	}
 	if($conf['pureftpd']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['pureftpd']['init_script']))				system($conf['init_scripts'].'/'.$conf['pureftpd']['init_script'].' restart');
 	if($conf['mydns']['installed'] == true && $conf['mydns']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['mydns']['init_script']))					system($conf['init_scripts'].'/'.$conf['mydns']['init_script'].' restart &> /dev/null');
 	if($conf['powerdns']['installed'] == true && $conf['powerdns']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['powerdns']['init_script']))					system($conf['init_scripts'].'/'.$conf['powerdns']['init_script'].' restart &> /dev/null');
 	if($conf['bind']['installed'] == true && $conf['bind']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['bind']['init_script']))					system($conf['init_scripts'].'/'.$conf['bind']['init_script'].' restart &> /dev/null');
-	
+	//if($conf['squid']['installed'] == true && $conf['squid']['init_script'] != '' && is_file($conf['init_scripts'].'/'.$conf['squid']['init_script']))					system($conf['init_scripts'].'/'.$conf['squid']['init_script'].' restart &> /dev/null');
+	if($conf['nginx']['installed'] == true && $conf['nginx']['init_script'] != '' && is_file($conf['init_scripts'].'/'.$conf['nginx']['init_script']))					system($conf['init_scripts'].'/'.$conf['nginx']['init_script'].' restart &> /dev/null');
+	//if($conf['ufw']['installed'] == true && $conf['ufw']['init_script'] != '' && is_file($conf['init_scripts'].'/'.$conf['ufw']['init_script']))					system($conf['init_scripts'].'/'.$conf['ufw']['init_script'].' restart &> /dev/null');
 }else{
 	
 	//* In expert mode, we select the services in the following steps, only db is always available
@@ -275,6 +323,8 @@ if($install_mode == 'standard') {
 	$conf['services']['web'] = false;
 	$conf['services']['dns'] = false;
 	$conf['services']['db'] = true;
+	$conf['services']['firewall'] = false;
+	$conf['services']['proxy'] = false;
 	
 	
 	//** Get Server ID
@@ -320,6 +370,16 @@ if($install_mode == 'standard') {
 	
 	//* Create the mysql database
 	$inst->configure_database();
+	
+	//* Configure Webserver - Apache or nginx
+	if($conf['apache']['installed'] == true && $conf['nginx']['installed'] == true) {
+		$http_server_to_use = $inst->simple_query('Apache and nginx detected. Select server to use for ISPConfig:', array('apache','nginx'), 'apache');
+		if($http_server_to_use == 'apache'){
+			$conf['nginx']['installed'] = false;
+		} else {
+			$conf['apache']['installed'] = false;
+		}
+	}
 		
 	//* Insert the Server record into the database
 	swriteln('Adding ISPConfig server record to database.');
@@ -416,27 +476,80 @@ if($install_mode == 'standard') {
 		
 	}
 	
+	/*
+	//** Configure Squid
+	if(strtolower($inst->simple_query('Configure Proxy Server', array('y','n'),'y') ) == 'y') {	
+		if($conf['squid']['installed'] == true) {
+			$conf['services']['proxy'] = true;
+			swriteln('Configuring Squid');
+			$inst->configure_squid();
+			if($conf['squid']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['squid']['init_script']))system($conf['init_scripts'].'/'.$conf['squid']['init_script'].' restart &> /dev/null');
+		} else if($conf['nginx']['installed'] == true) {
+			$conf['services']['proxy'] = true;
+			swriteln('Configuring Nginx');
+			$inst->configure_nginx();
+			if($conf['nginx']['init_script'] != '' && is_executable($conf['init_scripts'].'/'.$conf['nginx']['init_script']))system($conf['init_scripts'].'/'.$conf['nginx']['init_script'].' restart &> /dev/null');
+		}
+	}
+	*/
+	
 	//** Configure Apache
-	swriteln("\nHint: If this server shall run the ISPConfig interface, select 'y' in the 'Configure Apache Server' option.\n");
-	if(strtolower($inst->simple_query('Configure Apache Server',array('y','n'),'y')) == 'y') {	
-		$conf['services']['web'] = true;
-		swriteln('Configuring Apache');
-		$inst->configure_apache();
-        
-        //** Configure Vlogger
-        swriteln('Configuring Vlogger');
-        $inst->configure_vlogger();
-		
-		//** Configure apps vhost
-		swriteln('Configuring Apps vhost');
-		$inst->configure_apps_vhost();
+	if($conf['apache']['installed'] == true){
+		swriteln("\nHint: If this server shall run the ISPConfig interface, select 'y' in the 'Configure Apache Server' option.\n");
+		if(strtolower($inst->simple_query('Configure Apache Server',array('y','n'),'y')) == 'y') {	
+			$conf['services']['web'] = true;
+			swriteln('Configuring Apache');
+			$inst->configure_apache();
+       
+			//** Configure Vlogger
+			swriteln('Configuring Vlogger');
+			$inst->configure_vlogger();
+	
+			//** Configure apps vhost
+			swriteln('Configuring Apps vhost');
+			$inst->configure_apps_vhost();
+		}
+	}
+	
+	//** Configure nginx
+	if($conf['nginx']['installed'] == true){
+		swriteln("\nHint: If this server shall run the ISPConfig interface, select 'y' in the 'Configure nginx Server' option.\n");
+		if(strtolower($inst->simple_query('Configure nginx Server',array('y','n'),'y')) == 'y') {	
+			$conf['services']['web'] = true;
+			swriteln('Configuring nginx');
+			$inst->configure_nginx();
+       
+			//** Configure Vlogger
+			//swriteln('Configuring Vlogger');
+			//$inst->configure_vlogger();
+	
+			//** Configure apps vhost
+			swriteln('Configuring Apps vhost');
+			$inst->configure_apps_vhost();
+		}
 	}
 	
 	//** Configure Firewall
 	if(strtolower($inst->simple_query('Configure Firewall Server',array('y','n'),'y')) == 'y') {	
+		//if($conf['bastille']['installed'] == true) {
+			//* Configure Bastille Firewall
+			$conf['services']['firewall'] = true;
+			swriteln('Configuring Bastille Firewall');
+			$inst->configure_firewall();
+		/*} elseif($conf['ufw']['installed'] == true) {
+			//* Configure Ubuntu Firewall
+			$conf['services']['firewall'] = true;
+			swriteln('Configuring Ubuntu Firewall');
+			$inst->configure_ufw_firewall();
+		}
+		*/
+	}
+	
+	//** Configure Firewall
+	/*if(strtolower($inst->simple_query('Configure Firewall Server',array('y','n'),'y')) == 'y') {	
 		swriteln('Configuring Firewall');
 		$inst->configure_firewall();
-	}
+	}*/
 	
 	//** Configure ISPConfig :-)
 	if(strtolower($inst->simple_query('Install ISPConfig Web Interface',array('y','n'),'y')) == 'y') {
@@ -457,7 +570,10 @@ if($install_mode == 'standard') {
 		*/
 
 		//** Customise the port ISPConfig runs on
-		$conf['apache']['vhost_port'] = $inst->free_query('ISPConfig Port', '8080');
+		$ispconfig_vhost_port = $inst->free_query('ISPConfig Port', '8080');
+		if($conf['apache']['installed'] == true) $conf['apache']['vhost_port']  = $ispconfig_vhost_port;
+		if($conf['nginx']['installed'] == true) $conf['nginx']['vhost_port']  = $ispconfig_vhost_port;
+		unset($ispconfig_vhost_port);
 		
 		if(strtolower($inst->simple_query('Enable SSL for the ISPConfig web interface',array('y','n'),'y')) == 'y') {
 			$inst->make_ispconfig_ssl_cert();
@@ -478,7 +594,12 @@ if($install_mode == 'standard') {
 	//* Configure ISPConfig
 	swriteln('Installing ISPConfig crontab');
 	$inst->install_crontab();
-	if($conf['apache']['init_script'] != '' && @is_file($conf['init_scripts'].'/'.$conf['apache']['init_script'])) system($conf['init_scripts'].'/'.$conf['apache']['init_script'].' restart');
+	if($conf['apache']['installed'] == true && $conf['apache']['init_script'] != '' && @is_file($conf['init_scripts'].'/'.$conf['apache']['init_script'])) system($conf['init_scripts'].'/'.$conf['apache']['init_script'].' restart');
+	//* Reload is enough for nginx
+	if($conf['nginx']['installed'] == true){
+		if($conf['nginx']['php_fpm_init_script'] != '' && @is_file($conf['init_scripts'].'/'.$conf['nginx']['php_fpm_init_script'])) system($conf['init_scripts'].'/'.$conf['nginx']['php_fpm_init_script'].' reload');
+		if($conf['nginx']['init_script'] != '' && @is_file($conf['init_scripts'].'/'.$conf['nginx']['init_script'])) system($conf['init_scripts'].'/'.$conf['nginx']['init_script'].' reload');
+	}
 	
 	
 	

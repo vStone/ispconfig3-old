@@ -60,6 +60,7 @@ class maildrop_plugin {
 		Register for the events
 		*/
 		
+		$app->plugins->registerEvent('mail_user_insert','maildrop_plugin','update');
 		$app->plugins->registerEvent('mail_user_update','maildrop_plugin','update');
 		$app->plugins->registerEvent('mail_user_delete','maildrop_plugin','delete');
 		
@@ -124,7 +125,7 @@ class maildrop_plugin {
 			$file = $this->mailfilter_config_dir.'/'.$email_parts[1].'/'.$email_parts[0].'/.vacation.msg';
 			if(is_file($file)) unlink($file) or $app->log("Unable to delete file: $file",LOGLEVEL_WARN);
 			$file = $this->mailfilter_config_dir.'/'.$email_parts[1].'/'.$email_parts[0].'/.autoresponder';
-			if(is_file($file)) unlink($ar_file) or $app->log("Unable to delete file: $ar_file",LOGLEVEL_WARN);
+			if(is_file($file)) unlink($file) or $app->log("Unable to delete file: $file",LOGLEVEL_WARN);
 			
 			
 			//Now we create the new autoresponder, if it is enabled
@@ -210,10 +211,14 @@ class maildrop_plugin {
 					unset($config_file_path);
 				} else {
 					// Delete the mailfilter recipe
-					$email_parts = explode("@",$data["old"]["email"]);
-					$file = $this->mailfilter_config_dir.'/'.$email_parts[1].'/'.$email_parts[0].'/.mailfilter';
-					if(is_file($file)) unlink($file)  or $app->log("Unable to delete file: $file",LOGLEVEL_WARN);
-					$app->log("Deleting custom Mailfiter".$file,LOGLEVEL_DEBUG);
+					if(isset($data["old"]["email"])) {
+						$email_parts = explode("@",$data["old"]["email"]);
+						$file = $this->mailfilter_config_dir.'/'.$email_parts[1].'/'.$email_parts[0].'/.mailfilter';
+						if(is_file($file)) {
+							unlink($file)  or $app->log("Unable to delete file: $file",LOGLEVEL_WARN);
+							$app->log("Deleting custom Mailfiter".$file,LOGLEVEL_DEBUG);
+						}
+					}
 				}
 		}
 	}

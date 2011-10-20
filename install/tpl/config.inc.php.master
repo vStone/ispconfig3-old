@@ -56,7 +56,8 @@ $revision = str_replace(array('Revision:','$',' '), '', $svn_revision);
 
 //** Application
 define('ISPC_APP_TITLE', 'ISPConfig');
-define('ISPC_APP_VERSION', '3.0.3.2');
+define('ISPC_APP_VERSION', '3.0.4');
+define('DEVSYSTEM', 0);
 
 
 //** Database
@@ -66,6 +67,8 @@ $conf['db_database'] = '{mysql_server_database}';
 $conf['db_user'] = '{mysql_server_ispconfig_user}';
 $conf['db_password'] = '{mysql_server_ispconfig_password}';
 $conf['db_charset'] = 'utf8'; // same charset as html-charset - (HTML --> MYSQL: "utf-8" --> "utf8", "iso-8859-1" --> "latin1")
+$conf['db_new_link'] = false;
+$conf['db_client_flags'] = 0;
 
 define('DB_TYPE',$conf['db_type']);
 define('DB_HOST',$conf['db_host']);
@@ -81,6 +84,8 @@ $conf['dbmaster_host']			= '{mysql_master_server_host}';
 $conf['dbmaster_database']		= '{mysql_master_server_database}';
 $conf['dbmaster_user']			= '{mysql_master_server_ispconfig_user}';
 $conf['dbmaster_password']		= '{mysql_master_server_ispconfig_password}';
+$conf['dbmaster_new_link'] 		= false;
+$conf['dbmaster_client_flags'] 	= 0;
 
 
 //** Paths
@@ -143,7 +148,6 @@ $conf['theme'] = 'default';
 $conf['html_content_encoding'] = 'utf-8'; // example: utf-8, iso-8859-1, ...
 $conf['logo'] = 'themes/default/images/ispc_logo.png';
 
-
 //** Default Language
 $conf['language'] = '{language}';
 $conf['debug_language'] = false;
@@ -156,7 +160,6 @@ $conf['interface_logout_url'] = ''; // example: http://www.domain.tld/
 //** Auto Load Modules
 $conf['start_db'] = true;
 $conf['start_session'] = true;
-
 
 //** Constants
 define('LOGLEVEL_DEBUG',0);

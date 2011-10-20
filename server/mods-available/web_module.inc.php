@@ -43,7 +43,13 @@ class web_module {
 									'shell_user_delete',
 									'webdav_user_insert',
 									'webdav_user_update',
-									'webdav_user_delete');
+									'webdav_user_delete',
+									'web_folder_insert',
+									'web_folder_update',
+									'web_folder_delete',
+									'web_folder_user_insert',
+									'web_folder_user_update',
+									'web_folder_user_delete');
 	
 	//* This function is called during ispconfig installation to determine
 	//  if a symlink shall be created for this plugin.
@@ -86,6 +92,8 @@ class web_module {
 		$app->modules->registerTableHook('ftp_user','web_module','process');
 		$app->modules->registerTableHook('shell_user','web_module','process');
 		$app->modules->registerTableHook('webdav_user','web_module','process');
+		$app->modules->registerTableHook('web_folder','web_module','process');
+		$app->modules->registerTableHook('web_folder_user','web_module','process');
 		
 		// Register service
 		$app->services->registerService('httpd','web_module','restartHttpd');
@@ -121,6 +129,16 @@ class web_module {
 				if($action == 'u') $app->plugins->raiseEvent('webdav_user_update',$data);
 				if($action == 'd') $app->plugins->raiseEvent('webdav_user_delete',$data);
 			break;
+			case 'web_folder':
+				if($action == 'i') $app->plugins->raiseEvent('web_folder_insert',$data);
+				if($action == 'u') $app->plugins->raiseEvent('web_folder_update',$data);
+				if($action == 'd') $app->plugins->raiseEvent('web_folder_delete',$data);
+			break;
+			case 'web_folder_user':
+				if($action == 'i') $app->plugins->raiseEvent('web_folder_user_insert',$data);
+				if($action == 'u') $app->plugins->raiseEvent('web_folder_user_update',$data);
+				if($action == 'd') $app->plugins->raiseEvent('web_folder_user_delete',$data);
+			break;
 		} // end switch
 	} // end function
 	
@@ -129,11 +147,28 @@ class web_module {
 	function restartHttpd($action = 'restart') {
 		global $app,$conf;
 		
+		// load the server configuration options
+		$app->uses('getconf');
+		$web_config = $app->getconf->get_server_config($conf['server_id'], 'web');
+		
 		$daemon = '';
-		if(is_file($conf['init_scripts'] . '/' . 'httpd')) {
-			$daemon = 'httpd';
-		} else {
-			$daemon = 'apache2';
+		switch ($web_config['server_type']) {
+			case 'nginx':
+				$daemon = $web_config['server_type'];
+				// Reload PHP-FPM as well
+				$restart_second_service['daemon'] = $web_config['php_fpm_init_script'];
+				$restart_second_service['action'] = 'reload';
+				break;
+			default:
+				if(is_file($conf['init_scripts'] . '/' . 'httpd')) {
+					$daemon = 'httpd';
+				} else {
+					$daemon = 'apache2';
+				}
+		}
+		
+		if($restart_second_service['daemon'] != '' && $restart_second_service['action'] != ''){
+			exec($conf['init_scripts'] . '/' . $restart_second_service['daemon'] . ' ' . $restart_second_service['action']);
 		}
 		
 		if($action == 'restart') {

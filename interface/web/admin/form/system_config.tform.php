@@ -162,6 +162,12 @@ $form["tabs"]['mail'] = array (
 	##################################
 	# Begin Datatable fields
 	##################################
+    'enable_custom_login' => array(
+      'datatype' => 'VARCHAR',
+      'formtype' => 'CHECKBOX',
+      'default' => 'n',
+      'value' => array(0 => 'n', 1 => 'y')
+    ),
 		'mailboxlist_webmail_link' => array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'CHECKBOX',
@@ -254,10 +260,28 @@ $form["tabs"]['misc'] = array (
 	##################################
 	# Begin Datatable fields
 	##################################
-		'dashboard_atom_url' => array (
+		'dashboard_atom_url_admin' => array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'TEXT',
 			'default'	=> 'http://www.ispconfig.org/atom',
+			'value'		=> ''
+		),
+		'dashboard_atom_url_reseller' => array (
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'TEXT',
+			'default'	=> 'http://www.ispconfig.org/atom',
+			'value'		=> ''
+		),
+		'dashboard_atom_url_client' => array (
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'TEXT',
+			'default'	=> 'http://www.ispconfig.org/atom',
+			'value'		=> ''
+		),
+		'monitor_key' => array (
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'TEXT',
+			'default'	=> '',
 			'value'		=> ''
 		),
 	##################################

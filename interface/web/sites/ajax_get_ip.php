@@ -35,13 +35,19 @@ require_once('../../lib/app.inc.php');
 $app->auth->check_module_permissions('sites');
 
 $server_id = intval($_GET["server_id"]);
+$client_group_id = intval($_GET["client_group_id"]);
+$ip_type = $app->db->quote($_GET['ip_type']);
 
 if($_SESSION["s"]["user"]["typ"] == 'admin') {
 
-	$sql = "SELECT ip_address FROM server_ip WHERE server_id = $server_id";
+	$sql = "SELECT ip_address FROM server_ip WHERE ip_type = '$ip_type' AND server_id = $server_id";
 	$ips = $app->db->queryAllRecords($sql);
 	// $ip_select = "<option value=''></option>";
-	$ip_select = "*";
+	if($ip_type == 'IPv4'){
+		$ip_select = "*";
+	} else {
+		$ip_select = "";
+	}
 	if(is_array($ips)) {
 		foreach( $ips as $ip) {
 			//$selected = ($ip["ip_address"] == $this->dataRecord["ip_address"])?'SELECTED':'';

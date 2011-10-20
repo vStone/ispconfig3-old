@@ -124,6 +124,7 @@ class page_action extends tform_actions {
 		}
 
 		$app->tpl->setVar('template_additional_list', $text);
+		$app->tpl->setVar('app_module','client');
 
 		parent::onShowEnd();
 
@@ -148,10 +149,17 @@ class page_action extends tform_actions {
 		$type = 'user';
 		$active = 1;
 		$language = $app->db->quote($this->dataRecord["language"]);
+		$password = $app->auth->crypt_password($password);
+		
+		// Create the controlpaneluser for the client
+		//Generate ssh-rsa-keys
+		exec('ssh-keygen -t rsa -C '.$username.'-rsa-key-'.time().' -f /tmp/id_rsa -N ""');
+		$app->db->query("UPDATE client SET created_at = ".time().", id_rsa = '".$app->db->quote(@file_get_contents('/tmp/id_rsa'))."', ssh_rsa = '".$app->db->quote(@file_get_contents('/tmp/id_rsa.pub'))."' WHERE client_id = ".$this->id);
+		exec('rm -f /tmp/id_rsa /tmp/id_rsa.pub');
 		
 		// Create the controlpaneluser for the client
 		$sql = "INSERT INTO sys_user (username,passwort,modules,startmodule,app_theme,typ,active,language,groups,default_group,client_id)
-		VALUES ('$username',md5('$password'),'$modules','$startmodule','$usertheme','$type','$active','$language',$groups,$groupid,".$this->id.")";
+		VALUES ('$username','$password','$modules','$startmodule','$usertheme','$type','$active','$language',$groups,$groupid,".$this->id.")";
 		$app->db->query($sql);
 		
 		//* If the user who inserted the client is a reseller (not admin), we will have to add this new client group 
@@ -161,7 +169,7 @@ class page_action extends tform_actions {
 			$app->db->query("UPDATE client SET parent_client_id = ".intval($_SESSION['s']['user']['client_id'])." WHERE client_id = ".$this->id);
 		}
 		
-		$app->db->query("UPDATE client SET created_at = ".time()." WHERE client_id = ".$this->id);
+		
 
 		/* If there is a client-template, process it */
 		applyClientTemplates($this->id);
@@ -192,8 +200,15 @@ class page_action extends tform_actions {
 		// password changed
 		if($conf['demo_mode'] != true && isset($this->dataRecord["password"]) && $this->dataRecord["password"] != '') {
 			$password = $app->db->quote($this->dataRecord["password"]);
+			$salt="$1$";
+			$base64_alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+			for ($n=0;$n<8;$n++) {
+				$salt.=$base64_alphabet[mt_rand(0,63)];
+			}
+			$salt.="$";
+			$password = crypt(stripslashes($password),$salt);
 			$client_id = $this->id;
-			$sql = "UPDATE sys_user SET passwort = md5('$password') WHERE client_id = $client_id";
+			$sql = "UPDATE sys_user SET passwort = '$password' WHERE client_id = $client_id";
 			$app->db->query($sql);
 		}
 		
@@ -214,6 +229,7 @@ class page_action extends tform_actions {
 			$sql = "UPDATE sys_user SET modules = '$modules' WHERE client_id = $client_id";
 			$app->db->query($sql);
 		}
+		
 		/*
 		 *  If there is a client-template, process it */
 		applyClientTemplates($this->id);

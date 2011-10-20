@@ -1,5 +1,5 @@
 <?php
-$wb['list_head_txt'] = 'Récuprer les emails depuis des serveurs POP3/IMAP externes';
+$wb['list_head_txt'] = 'Récupérer les emails depuis des serveurs POP3/IMAP externes';
 $wb['active_txt'] = 'Actif';
 $wb['server_id_txt'] = 'Serveur';
 $wb['source_server_txt'] = 'Serveur externe';

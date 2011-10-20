@@ -5,6 +5,7 @@
   
   <div class="pnl_formsarea">
     <fieldset class="inlineLabels"><legend>Limits</legend>
+<!--
 <tmpl_if name="is_admin">
       <div class="ctrlHolder">
       	<label for="template_master">{tmpl_var name='template_master_txt'}</label>
@@ -24,6 +25,7 @@
 	    &nbsp;
 	  </div>
 </tmpl_if>
+-->
       <div class="ctrlHolder">
       	<label for="default_mailserver">{tmpl_var name='default_mailserver_txt'}</label>
         <select name="default_mailserver" id="default_mailserver" class="selectInput">
@@ -45,7 +47,11 @@
       <div class="ctrlHolder">
       	<label for="limit_mailalias">{tmpl_var name='limit_mailalias_txt'}</label>
         <input name="limit_mailalias" id="limit_mailalias" value="{tmpl_var name='limit_mailalias'}" size="10" maxlength="10" type="text" class="textInput formLengthLimit" />
-			</div>
+	  </div>
+	  <div class="ctrlHolder">
+				<label for="limit_mailaliasdomain">{tmpl_var name='limit_mailaliasdomain_txt'}</label>
+				<input name="limit_mailaliasdomain" id="limit_mailaliasdomain" value="{tmpl_var name='limit_mailaliasdomain'}" size="10" maxlength="10" type="text" class="textInput formLengthLimit" />
+	  </div>
       <div class="ctrlHolder">
       	<label for="limit_mailforward">{tmpl_var name='limit_mailforward_txt'}</label>
         <input name="limit_mailforward" id="limit_mailforward" value="{tmpl_var name='limit_mailforward'}" size="10" maxlength="10" type="text" class="textInput formLengthLimit" />
@@ -124,6 +130,10 @@
 						{tmpl_var name='ssh_chroot'}
 					</div>
 			</div>
+	  <div class="ctrlHolder">
+				<label for="limit_webdav_user">{tmpl_var name='limit_webdav_user_txt'}</label>
+				<input name="limit_webdav_user" id="limit_webdav_user" value="{tmpl_var name='limit_webdav_user'}" size="10" maxlength="10" type="text" class="textInput formLengthLimit" />
+			</div>
       <div class="ctrlHolder">
       	<label for="default_dnsserver">{tmpl_var name='default_dnsserver_txt'}</label>
         <select name="default_dnsserver" id="default_dnsserver" class="selectInput">
@@ -174,6 +184,16 @@
       	<label for="limit_traffic_quota">{tmpl_var name='limit_traffic_quota_txt'}</label>
         <input name="limit_traffic_quota" id="limit_traffic_quota" value="{tmpl_var name='limit_traffic_quota'}" size="10" maxlength="10" type="text" class="textInput formLengthLimit" />&nbsp;MB
 	  </div>
+	  <div class="ctrlHolder">
+				<label for="limit_openvz_vm">{tmpl_var name='limit_openvz_vm_txt'}</label>
+				<input name="limit_openvz_vm" id="limit_openvz_vm" value="{tmpl_var name='limit_openvz_vm'}" size="10" maxlength="10" type="text" class="textInput formLengthLimit" />
+			</div>
+			<div class="ctrlHolder">
+				<label for="limit_openvz_vm_template_id">{tmpl_var name='limit_openvz_vm_template_id_txt'}</label>
+				<select name="limit_openvz_vm_template_id" id="limit_openvz_vm_template_id" class="selectInput">
+					{tmpl_var name='limit_openvz_vm_template_id'}
+				</select>
+			</div>
     </fieldset>
 
     <input type="hidden" name="id" value="{tmpl_var name='id'}">

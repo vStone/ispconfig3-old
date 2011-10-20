@@ -5,5 +5,5 @@ $wb['recipient_txt'] = 'Bénéficiaire';
 $wb['active_txt'] = 'Actif';
 $wb['source_error_notempty'] = 'Ladresse est vide.';
 $wb['type_txt'] = 'Type';
-$wb['limit_mailfilter_txt'] = 'Le nombre max. de filtres demails pour votre compte a été atteint.';
+$wb['limit_mailfilter_txt'] = 'Le nombre maximal de filtres demail pour votre compte a été atteint.';
 ?>

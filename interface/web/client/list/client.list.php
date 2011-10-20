@@ -25,7 +25,7 @@ $liste["table_idx"]			= "client_id";
 $liste["search_prefix"] 	= "search_";
 
 // Records per page
-$liste["records_per_page"] 	= 15;
+$liste["records_per_page"] 	= "15";
 
 // Script File of the list
 $liste["file"]				= "client_list.php";
@@ -73,6 +73,15 @@ $liste["item"][] = array(	'field'		=> "contact_name",
 							'suffix'	=> "%",
 							'width'		=> "",
 							'value'		=> "");  
+
+$liste["item"][] = array(	'field'		=> "username",
+							'datatype'	=> "VARCHAR",
+							'formtype'	=> "TEXT",
+							'op'		=> "like",
+							'prefix'	=> "%",
+							'suffix'	=> "%",
+							'width'		=> "",
+							'value'		=> ""); 
 
 $liste["item"][] = array(	'field'		=> "city",
 							'datatype'	=> "VARCHAR",

@@ -2,6 +2,6 @@
 $wb['list_head_txt'] = 'Groupes dutilisateurs système';
 $wb['description_txt'] = 'Description';
 $wb['name_txt'] = 'Groupe';
-$wb['add_new_record_txt'] = 'Ajouter nouveau groupe';
-$wb['warning_txt'] = '<b>WARNING:</b> Do not edit or modify any user settings here. Use the Client- and Reseller settings in the Client module instead. Modifying or changing Users or groups here may cause data loss!';
+$wb['add_new_record_txt'] = 'Ajouter un nouveau groupe';
+$wb['warning_txt'] = '<b>ATTENTION:</b> Ne pas éditer ou modifier de paramètre utilisateur ici. Utilisez les paramètres Client et Revendeur dans le module Client à la place. Modifier ou changer les informations ici peut conduire à la perte de données';
 ?>

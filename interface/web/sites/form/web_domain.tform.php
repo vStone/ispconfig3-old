@@ -82,11 +82,22 @@ $form["tabs"]['domain'] = array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'SELECT',
 			'default'	=> '',
-			'datasource'	=> array ( 	'type'	=> 'SQL',
-										'querystring' => 'SELECT ip_address,ip_address FROM server_ip WHERE {AUTHSQL} ORDER BY ip_address',
+			/*'datasource'	=> array ( 	'type'	=> 'SQL',
+										'querystring' => "SELECT ip_address,ip_address FROM server_ip WHERE ip_type = 'IPv4' AND {AUTHSQL} ORDER BY ip_address",
 										'keyfield'=> 'ip_address',
 										'valuefield'=> 'ip_address'
-									 ),
+									 ),*/
+			'value'		=> ''
+		),
+		'ipv6_address' => array (
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'SELECT',
+			'default'	=> '',
+			/*'datasource'	=> array ( 	'type'	=> 'SQL',
+										'querystring' => "SELECT ip_address,ip_address FROM server_ip WHERE ip_type = 'IPv6' AND {AUTHSQL} ORDER BY ip_address",
+										'keyfield'=> 'ip_address',
+										'valuefield'=> 'ip_address'
+									 ),*/
 			'value'		=> ''
 		),
 		'domain' => array (
@@ -133,6 +144,9 @@ $form["tabs"]['domain'] = array (
 			'formtype'	=> 'TEXT',
 			'validators'	=> array ( 	0 => array (	'type'	=> 'NOTEMPTY',
 														'errmsg'=> 'hd_quota_error_empty'),
+										1 => array (	'type'	=> 'REGEX',
+														'regex' => '/^(\-1|[0-9]{1,10})$/',
+														'errmsg'=> 'hd_quota_error_regex'),
 									),
 			'default'	=> '-1',
 			'value'		=> '',
@@ -144,6 +158,9 @@ $form["tabs"]['domain'] = array (
 			'formtype'	=> 'TEXT',
 			'validators'	=> array ( 	0 => array (	'type'	=> 'NOTEMPTY',
 														'errmsg'=> 'traffic_quota_error_empty'),
+										1 => array (	'type'	=> 'REGEX',
+														'regex' => '/^(\-1|[0-9]{1,10})$/',
+														'errmsg'=> 'traffic_quota_error_regex'),
 									),
 			'default'	=> '-1',
 			'value'		=> '',
@@ -165,7 +182,7 @@ $form["tabs"]['domain'] = array (
 		'suexec' => array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'CHECKBOX',
-			'default'	=> 'n',
+			'default'	=> 'y',
 			'value'		=> array(0 => 'n',1 => 'y')
 		),
 		'errordocs' => array (
@@ -199,6 +216,12 @@ $form["tabs"]['domain'] = array (
 			'default'	=> 'n',
 			'value'		=> array(0 => 'n',1 => 'y')
 		),
+		'python' => array (
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'CHECKBOX',
+			'default'	=> 'n',
+			'value'		=> array(0 => 'n',1 => 'y')
+		),
 		'active' => array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'CHECKBOX',
@@ -225,12 +248,12 @@ $form["tabs"]['redirect'] = array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'SELECT',
 			'default'	=> '',
-			'value'		=> array('' => 'no_redirect_txt', 'no' => 'no_flag_txt', 'R' => 'R', 'L' => 'L', 'R,L' => 'R,L')
+			'value'		=> array('' => 'no_redirect_txt', 'no' => 'no_flag_txt', 'R' => 'R', 'L' => 'L', 'R,L' => 'R,L', 'last' => 'last', 'break' => 'break', 'redirect' => 'redirect', 'permanent' => 'permanent')
 		),
 		'redirect_path' => array (
 			'datatype'	=> 'VARCHAR',
 			'validators'	=> array ( 	0 => array (	'type'	=> 'REGEX',
-														'regex' => '@^(([.]{0})|(https?://([-\w\.]+)+(:\d+)?(/([\w/_\.\,\-\+\?]*(\?\S+)?)?)?)|(/[\w/_\.\-]{1,255}/))$@',
+														'regex' => '@^(([.]{0})|(https?://([-\w\.]+)+(:\d+)?(/([\w/_\.\,\-\+\?\~]*(\?\S+)?)?)?)|(\[scheme\]://([-\w\.]+)+(:\d+)?(/([\w/_\.\-\,\+\?\~]*(\?\S+)?)?)?)|(/[\w/_\.\-]{1,255}/))$@',
 														'errmsg'=> 'redirect_error_regex'),
 									),
 			'formtype'	=> 'TEXT',
@@ -238,6 +261,12 @@ $form["tabs"]['redirect'] = array (
 			'value'		=> '',
 			'width'		=> '30',
 			'maxlength'	=> '255'
+		),
+		'seo_redirect' => array (
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'SELECT',
+			'default'	=> '',
+			'value'		=> array('' => 'no_redirect_txt', 'non_www_to_www' => 'non_www_to_www_txt', 'www_to_non_www' => 'www_to_non_www_txt')
 		),
 	##################################
 	# ENDE Datatable fields
@@ -302,6 +331,7 @@ $form["tabs"]['ssl'] = array (
 			'width'		=> '30',
 			'maxlength'	=> '255'
 		),
+		/*
 		'ssl_country' => array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'TEXT',
@@ -313,6 +343,18 @@ $form["tabs"]['ssl'] = array (
 			'value'		=> '',
 			'width'		=> '2',
 			'maxlength'	=> '2'
+		),
+		*/
+		'ssl_country' => array (
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'SELECT',
+			'default'	=> '',
+			'datasource'	=> array ( 	'type'	=> 'SQL',
+										'querystring' => 'SELECT iso,printable_name FROM country ORDER BY printable_name',
+										'keyfield'=> 'iso',
+										'valuefield'=> 'printable_name'
+									 ),
+			'value'		=> ''
 		),
 		'ssl_domain' => array (
 			'datatype'	=> 'VARCHAR',
@@ -476,12 +518,66 @@ $form["tabs"]['advanced'] = array (
 			'width'		=> '30',
 			'maxlength'	=> '255'
 		),
+		'php_fpm_use_socket' => array (
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'CHECKBOX',
+			'default'	=> 'n',
+			'value'		=> array(0 => 'n',1 => 'y')
+		),
+		'pm_max_children' => array (
+			'datatype'	=> 'INTEGER',
+			'formtype'	=> 'TEXT',
+			'validators'	=> array ( 	0 => array (	'type'	=> 'REGEX',
+														'regex' => '/^([1-9][0-9]{0,10})$/',
+														'errmsg'=> 'pm_max_children_error_regex'),
+									),
+			'default'	=> '50',
+			'value'		=> '',
+			'width'		=> '3',
+			'maxlength'	=> '3'
+		),
+		'pm_start_servers' => array (
+			'datatype'	=> 'INTEGER',
+			'formtype'	=> 'TEXT',
+			'validators'	=> array ( 	0 => array (	'type'	=> 'REGEX',
+														'regex' => '/^([1-9][0-9]{0,10})$/',
+														'errmsg'=> 'pm_start_servers_error_regex'),
+									),
+			'default'	=> '20',
+			'value'		=> '',
+			'width'		=> '3',
+			'maxlength'	=> '3'
+		),
+		'pm_min_spare_servers' => array (
+			'datatype'	=> 'INTEGER',
+			'formtype'	=> 'TEXT',
+			'validators'	=> array ( 	0 => array (	'type'	=> 'REGEX',
+														'regex' => '/^([1-9][0-9]{0,10})$/',
+														'errmsg'=> 'pm_min_spare_servers_error_regex'),
+									),
+			'default'	=> '5',
+			'value'		=> '',
+			'width'		=> '3',
+			'maxlength'	=> '3'
+		),
+		'pm_max_spare_servers' => array (
+			'datatype'	=> 'INTEGER',
+			'formtype'	=> 'TEXT',
+			'validators'	=> array ( 	0 => array (	'type'	=> 'REGEX',
+														'regex' => '/^([1-9][0-9]{0,10})$/',
+														'errmsg'=> 'pm_max_spare_servers_error_regex'),
+									),
+			'default'	=> '35',
+			'value'		=> '',
+			'width'		=> '3',
+			'maxlength'	=> '3'
+		),
 		'php_open_basedir' => array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'TEXT',
-			'validators'	=> array ( 	0 => array (	'type'	=> 'NOTEMPTY',
+			/*'validators'	=> array ( 	0 => array (	'type'	=> 'NOTEMPTY',
 														'errmsg'=> 'php_open_basedir_error_empty'),
-									),
+									),   */
 			'default'	=> 'All',
 			'value'		=> '',
 			'width'		=> '30',
@@ -503,7 +599,15 @@ $form["tabs"]['advanced'] = array (
 			'width'		=> '30',
 			'maxlength'	=> '255'
 		),
-        'apache_directives_ssl' => array (
+    'apache_directives_ssl' => array (
+      'datatype'  => 'TEXT',
+      'formtype'  => 'TEXT',
+      'default' => '',
+      'value'   => '',
+      'width'   => '30',
+      'maxlength' => '255'
+    ),
+    'nginx_directives' => array (
 			'datatype'	=> 'TEXT',
 			'formtype'	=> 'TEXT',
 			'default'	=> '',

@@ -60,6 +60,7 @@ class maildeliver_plugin {
 		Register for the events
 		*/
 		
+		$app->plugins->registerEvent('mail_user_insert','maildeliver_plugin','update');
 		$app->plugins->registerEvent('mail_user_update','maildeliver_plugin','update');
 		$app->plugins->registerEvent('mail_user_delete','maildeliver_plugin','delete');
 		
@@ -111,11 +112,33 @@ class maildeliver_plugin {
 				
 			// Move junk
 			$tpl->setVar('move_junk',$data["new"]["move_junk"]);
-				
+
+			// Set autoresponder start date
+			$tpl->setVar('start_date',$data["new"]["autoresponder_start_date"]);
+
+			// Set autoresponder end date
+			$tpl->setVar('end_date',$data["new"]["autoresponder_end_date"]);
+
 			// Autoresponder
 			$tpl->setVar('autoresponder',$data["new"]["autoresponder"]);
+			
+			$data["new"]["autoresponder_text"] = str_replace("\"","'",$data["new"]["autoresponder_text"]); 
 			$tpl->setVar('autoresponder_text',$data["new"]["autoresponder_text"]);
-				
+			
+			//* Set alias addresses for autoresponder
+			$sql = "SELECT * FROM mail_forwarding WHERE type = 'alias' AND destination = '".$app->db->quote($data["new"]["email"])."'";
+			$records = $app->db->queryAllRecords($sql);
+			$addresses = '';
+			if(is_array($records) && count($records) > 0) {
+				$addresses .= ':addresses ["'.$data["new"]["email"].'",';
+				foreach($records as $rec) {
+					$addresses .= '"'.$rec['source'].'",';
+				}
+				$addresses = substr($addresses,0,-1);
+				$addresses .= ']';
+			}
+			$tpl->setVar('addresses',$addresses);
+			
 			file_put_contents($sieve_file,$tpl->grab());
 			
 			unset($tpl);

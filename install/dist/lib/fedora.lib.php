@@ -105,12 +105,6 @@ class installer_dist extends installer_base {
 			'transport_maps = proxy:mysql:'.$config_dir.'/mysql-virtual_transports.cf',
 			'relay_domains = mysql:'.$config_dir.'/mysql-virtual_relaydomains.cf',
 			'relay_recipient_maps = mysql:'.$config_dir.'/mysql-virtual_relayrecipientmaps.cf',
-			'virtual_create_maildirsize = yes',
-			'virtual_maildir_extended = yes',
-			'virtual_mailbox_limit_maps = proxy:mysql:'.$config_dir.'/mysql-virtual_mailbox_limit_maps.cf',
-			'virtual_mailbox_limit_override = yes',
-			'virtual_maildir_limit_message = "The user you are trying to reach is over quota."',
-			'virtual_overquota_bounce = yes',
 			'proxy_read_maps = $local_recipient_maps $mydestination $virtual_alias_maps $virtual_alias_domains $virtual_mailbox_maps $virtual_mailbox_domains $relay_recipient_maps $relay_domains $canonical_maps $sender_canonical_maps $recipient_canonical_maps $relocated_maps $transport_maps $mynetworks $virtual_mailbox_limit_maps',
 			'smtpd_sender_restrictions = check_sender_access mysql:'.$config_dir.'/mysql-virtual_sender.cf',
 			'smtpd_client_restrictions = check_client_access mysql:'.$config_dir.'/mysql-virtual_client.cf',
@@ -503,6 +497,7 @@ class installer_dist extends installer_base {
     {	
 		global $conf;
 		
+		if($conf['apache']['installed'] == false) return;
 		if(is_file('/etc/suphp.conf')) {
 			//replaceLine('/etc/suphp.conf','php=php:/usr/bin','x-httpd-suphp=php:/usr/bin/php-cgi',0);
 			replaceLine('/etc/suphp.conf','docroot=','docroot=/var/www',0);
@@ -527,14 +522,28 @@ class installer_dist extends installer_base {
         $vhost_conf_enabled_dir = $conf['apache']['vhost_conf_enabled_dir'];
         
 		// copy('tpl/apache_ispconfig.conf.master',$vhost_conf_dir.'/ispconfig.conf');
-		$content = rf("tpl/apache_ispconfig.conf.master");
-		$records = $this->db->queryAllRecords("SELECT * FROM server_ip WHERE server_id = ".$conf["server_id"]." AND virtualhost = 'y'");
+		$content = rf('tpl/apache_ispconfig.conf.master');
+		$records = $this->db->queryAllRecords('SELECT * FROM '.$conf['mysql']['master_database'].'.server_ip WHERE server_id = '.$conf['server_id']." AND virtualhost = 'y'");
+
 		if(is_array($records) && count($records) > 0) {
 			foreach($records as $rec) {
-				$content .= "NameVirtualHost ".$rec["ip_address"].":80\n";
-				$content .= "NameVirtualHost ".$rec["ip_address"].":443\n";
+				if($rec['ip_type'] == 'IPv6') {
+					$ip_address = '['.$rec['ip_address'].']';
+				} else {
+					$ip_address = $rec['ip_address'];
+				}
+				$ports = explode(',',$rec['virtualhost_port']);
+				if(is_array($ports)) {
+					foreach($ports as $port) {
+						$port = intval($port);
+						if($port > 0 && $port < 65536 && $ip_address != '') {
+							$content .= 'NameVirtualHost '.$ip_address.":".$port."\n";
+						}
+					}
+				}
 			}
 		}
+		
 		$content .= "\n";
 		wf($vhost_conf_dir.'/ispconfig.conf',$content);
 		
@@ -559,6 +568,42 @@ class installer_dist extends installer_base {
 		$command = 'groupadd sshusers';
 		if(!is_group('sshusers')) caselog($command.' &> /dev/null 2> /dev/null', __FILE__, __LINE__, "EXECUTED: $command", "Failed to execute the command $command");
 		
+	}
+	
+	public function configure_nginx(){
+		global $conf;
+		
+		if($conf['nginx']['installed'] == false) return;
+		//* Create the logging directory for the vhost logfiles
+		if(!@is_dir($conf['ispconfig_log_dir'].'/httpd')) mkdir($conf['ispconfig_log_dir'].'/httpd', 0755, true);
+		
+		// Sites enabled and avaulable dirs
+		exec('mkdir -p '.$conf['nginx']['vhost_conf_enabled_dir']);
+		exec('mkdir -p '.$conf['nginx']['vhost_conf_dir']);
+
+		wf('/etc/nginx/conf.d/ispconfig_vhosts.conf',"include /etc/nginx/sites-enabled/*.vhost;");
+
+		//* make sure that webalizer finds its config file when it is directly in /etc
+		if(@is_file('/etc/webalizer.conf') && !@is_dir('/etc/webalizer')) {
+			mkdir('/etc/webalizer');
+			symlink('/etc/webalizer.conf','/etc/webalizer/webalizer.conf');
+		}
+
+		if(is_file('/etc/webalizer/webalizer.conf')) {
+			// Change webalizer mode to incremental
+			replaceLine('/etc/webalizer/webalizer.conf','#IncrementalName','IncrementalName webalizer.current',0,0);
+			replaceLine('/etc/webalizer/webalizer.conf','#Incremental','Incremental     yes',0,0);
+			replaceLine('/etc/webalizer/webalizer.conf','#HistoryName','HistoryName     webalizer.hist',0,0);
+		}
+		
+		// Check the awsatst script
+		if(!is_dir('/usr/share/awstats/tools')) exec('mkdir -p /usr/share/awstats/tools');
+		if(!file_exists('/usr/share/awstats/tools/awstats_buildstaticpages.pl') && file_exists('/usr/share/doc/awstats/examples/awstats_buildstaticpages.pl')) symlink('/usr/share/doc/awstats/examples/awstats_buildstaticpages.pl','/usr/share/awstats/tools/awstats_buildstaticpages.pl');
+		if(file_exists('/etc/awstats/awstats.conf.local')) replaceLine('/etc/awstats/awstats.conf.local','LogFormat=4','LogFormat=1',0,1);
+		
+		//* add a sshusers group
+		$command = 'groupadd sshusers';
+		if(!is_group('sshusers')) caselog($command.' &> /dev/null 2> /dev/null', __FILE__, __LINE__, "EXECUTED: $command", "Failed to execute the command $command");
 	}
 	
 	public function configure_firewall()
@@ -695,7 +740,7 @@ class installer_dist extends installer_base {
 		$content = str_replace('{server_id}', $conf['server_id'], $content);
 		$content = str_replace('{ispconfig_log_priority}', $conf['ispconfig_log_priority'], $content);
 		$content = str_replace('{language}', $conf['language'], $content);
-		
+
 		wf("$install_dir/server/lib/$configfile", $content);
 		
 		//* Create the config file for remote-actions (but only, if it does not exist, because
@@ -733,6 +778,8 @@ class installer_dist extends installer_base {
 		if (is_dir($dir)) {
 			if ($dh = opendir($dir)) {
 				while (($file = readdir($dh)) !== false) {
+					if($conf['apache']['installed'] == true && $file == 'nginx_plugin.inc.php') continue;
+					if($conf['nginx']['installed'] == true && $file == 'apache2_plugin.inc.php') continue;
 					if($file != '.' && $file != '..' && substr($file,-8,8) == '.inc.php') {
 						include_once($install_dir.'/server/plugins-available/'.$file);
 						$plugin_name = substr($file,0,-8);
@@ -807,63 +854,137 @@ class installer_dist extends installer_base {
 		// TODO: FIXME: add the www-data user to the ispconfig group. This is just for testing
 		// and must be fixed as this will allow the apache user to read the ispconfig files.
 		// Later this must run as own apache server or via suexec!
-		$command = 'usermod -a -G ispconfig '.$conf['apache']['user'];
-		caselog($command.' &> /dev/null', __FILE__, __LINE__, "EXECUTED: $command", "Failed to execute the command $command");
+		if($conf['apache']['installed'] == true){
+			$command = 'usermod -a -G ispconfig '.$conf['apache']['user'];
+			caselog($command.' &> /dev/null', __FILE__, __LINE__, "EXECUTED: $command", "Failed to execute the command $command");
+			if(is_group('ispapps')){
+				$command = 'usermod -a -G ispapps '.$conf['apache']['user'];
+				caselog($command.' &> /dev/null', __FILE__, __LINE__, "EXECUTED: $command", "Failed to execute the command $command");
+			}
+		}
+		if($conf['nginx']['installed'] == true){
+			$command = 'usermod -a -G ispconfig '.$conf['nginx']['user'];
+			caselog($command.' &> /dev/null', __FILE__, __LINE__, "EXECUTED: $command", "Failed to execute the command $command");
+			if(is_user('ispapps')){
+				// Allow the ispapps vhost access to /etc/squirrelmail
+				$command = 'usermod -a -G '.$conf['apache']['group'].' ispapps';
+				caselog($command.' &> /dev/null', __FILE__, __LINE__, "EXECUTED: $command", "Failed to execute the command $command");
+			}
+			if(is_group('ispapps')){
+				$command = 'usermod -a -G ispapps '.$conf['nginx']['user'];
+				caselog($command.' &> /dev/null', __FILE__, __LINE__, "EXECUTED: $command", "Failed to execute the command $command");
+			}
+		}
 		
 		//* Make the shell scripts executable
 		$command = "chmod +x $install_dir/server/scripts/*.sh";
 		caselog($command.' &> /dev/null', __FILE__, __LINE__, "EXECUTED: $command", "Failed to execute the command $command");
 		
-		//* Copy the ISPConfig vhost for the controlpanel
-        // TODO: These are missing! should they be "vhost_dist_*_dir" ?
-        $vhost_conf_dir = $conf['apache']['vhost_conf_dir'];
-        $vhost_conf_enabled_dir = $conf['apache']['vhost_conf_enabled_dir'];
+		if($conf['apache']['installed'] == true){
+			//* Copy the ISPConfig vhost for the controlpanel
+			// TODO: These are missing! should they be "vhost_dist_*_dir" ?
+			$vhost_conf_dir = $conf['apache']['vhost_conf_dir'];
+			$vhost_conf_enabled_dir = $conf['apache']['vhost_conf_enabled_dir'];
         
         
-        // Dont just copy over the virtualhost template but add some custom settings
-        $content = rf("tpl/apache_ispconfig.vhost.master");
-		$content = str_replace('{vhost_port}', $conf['apache']['vhost_port'], $content);
+			// Dont just copy over the virtualhost template but add some custom settings
+			$content = rf("tpl/apache_ispconfig.vhost.master");
+			$content = str_replace('{vhost_port}', $conf['apache']['vhost_port'], $content);
 		
-		// comment out the listen directive if port is 80 or 443
-		if($conf['apache']['vhost_port'] == 80 or $conf['apache']['vhost_port'] == 443) {
-			$content = str_replace('{vhost_port_listen}', '#', $content);
-		} else {
-			$content = str_replace('{vhost_port_listen}', '', $content);
+			// comment out the listen directive if port is 80 or 443
+			if($conf['apache']['vhost_port'] == 80 or $conf['apache']['vhost_port'] == 443) {
+				$content = str_replace('{vhost_port_listen}', '#', $content);
+			} else {
+				$content = str_replace('{vhost_port_listen}', '', $content);
+			}
+		
+			if(is_file('/usr/local/ispconfig/interface/ssl/ispserver.crt') && is_file('/usr/local/ispconfig/interface/ssl/ispserver.key')) {
+				$content = str_replace('{ssl_comment}', '', $content);
+			} else {
+				$content = str_replace('{ssl_comment}', '#', $content);
+			}
+		
+			wf("$vhost_conf_dir/ispconfig.vhost", $content);
+		
+			//copy('tpl/apache_ispconfig.vhost.master', "$vhost_conf_dir/ispconfig.vhost");
+			//* and create the symlink
+			if($this->install_ispconfig_interface == true && $this->is_update == false) {
+				if(@is_link("$vhost_conf_enabled_dir/ispconfig.vhost")) unlink("$vhost_conf_enabled_dir/ispconfig.vhost");
+				if(!@is_link("$vhost_conf_enabled_dir/000-ispconfig.vhost")) {
+					exec("ln -s $vhost_conf_dir/ispconfig.vhost $vhost_conf_enabled_dir/000-ispconfig.vhost");
+				}
+			
+				exec('mkdir -p /var/www/php-fcgi-scripts/ispconfig');
+				exec('cp tpl/apache_ispconfig_fcgi_starter.master /var/www/php-fcgi-scripts/ispconfig/.php-fcgi-starter');
+				exec('chmod +x /var/www/php-fcgi-scripts/ispconfig/.php-fcgi-starter');
+				exec('ln -s /usr/local/ispconfig/interface/web /var/www/ispconfig');
+				exec('chown -R ispconfig:ispconfig /var/www/php-fcgi-scripts/ispconfig');
+			
+				replaceLine('/var/www/php-fcgi-scripts/ispconfig/.php-fcgi-starter','PHPRC=','PHPRC=/etc/',0,0);
+			}
+		
+			//copy('tpl/apache_ispconfig.vhost.master', "$vhost_conf_dir/ispconfig.vhost");
+			//* and create the symlink
+			if($this->install_ispconfig_interface == true && $this->is_update == false) {
+				if(@is_link("$vhost_conf_enabled_dir/ispconfig.vhost")) unlink("$vhost_conf_enabled_dir/ispconfig.vhost");
+				if(!@is_link("$vhost_conf_enabled_dir/000-ispconfig.vhost")) {
+					exec("ln -s $vhost_conf_dir/ispconfig.vhost $vhost_conf_enabled_dir/000-ispconfig.vhost");
+				}
+			}
 		}
 		
-		if(is_file('/usr/local/ispconfig/interface/ssl/ispserver.crt') && is_file('/usr/local/ispconfig/interface/ssl/ispserver.key')) {
-			$content = str_replace('{ssl_comment}', '', $content);
-		} else {
-			$content = str_replace('{ssl_comment}', '#', $content);
-		}
+		if($conf['nginx']['installed'] == true){
+			//* Copy the ISPConfig vhost for the controlpanel
+			$vhost_conf_dir = $conf['nginx']['vhost_conf_dir'];
+			$vhost_conf_enabled_dir = $conf['nginx']['vhost_conf_enabled_dir'];
+
+			// Dont just copy over the virtualhost template but add some custom settings
+			$content = rf('tpl/nginx_ispconfig.vhost.master');
+			$content = str_replace('{vhost_port}', $conf['nginx']['vhost_port'], $content);
 		
-		wf("$vhost_conf_dir/ispconfig.vhost", $content);
-		
-		//copy('tpl/apache_ispconfig.vhost.master', "$vhost_conf_dir/ispconfig.vhost");
-		//* and create the symlink
-		if($this->install_ispconfig_interface == true && $this->is_update == false) {
-			if(@is_link("$vhost_conf_enabled_dir/ispconfig.vhost")) unlink("$vhost_conf_enabled_dir/ispconfig.vhost");
-			if(!@is_link("$vhost_conf_enabled_dir/000-ispconfig.vhost")) {
-				exec("ln -s $vhost_conf_dir/ispconfig.vhost $vhost_conf_enabled_dir/000-ispconfig.vhost");
+			if(is_file($install_dir.'/interface/ssl/ispserver.crt') && is_file($install_dir.'/interface/ssl/ispserver.key')) {
+				$content = str_replace('{ssl_on}', ' ssl', $content);
+				$content = str_replace('{ssl_comment}', '', $content);
+				$content = str_replace('{fastcgi_ssl}', 'on', $content);
+			} else {
+				$content = str_replace('{ssl_on}', '', $content);
+				$content = str_replace('{ssl_comment}', '#', $content);
+				$content = str_replace('{fastcgi_ssl}', 'off', $content);
 			}
 			
-			exec('mkdir -p /var/www/php-fcgi-scripts/ispconfig');
-			exec('cp tpl/apache_ispconfig_fcgi_starter.master /var/www/php-fcgi-scripts/ispconfig/.php-fcgi-starter');
-			exec('chmod +x /var/www/php-fcgi-scripts/ispconfig/.php-fcgi-starter');
-			exec('ln -s /usr/local/ispconfig/interface/web /var/www/ispconfig');
-			exec('chown -R ispconfig:ispconfig /var/www/php-fcgi-scripts/ispconfig');
+			$socket_dir = escapeshellcmd($conf['nginx']['php_fpm_socket_dir']);
+			if(substr($socket_dir,-1) != '/') $socket_dir .= '/';
+			if(!is_dir($socket_dir)) exec('mkdir -p '.$socket_dir);
+			$fpm_socket = $socket_dir.'ispconfig.sock';
 			
-			replaceLine('/var/www/php-fcgi-scripts/ispconfig/.php-fcgi-starter','PHPRC=','PHPRC=/etc/',0,0);
+			//$content = str_replace('{fpm_port}', $conf['nginx']['php_fpm_start_port'], $content);
+			$content = str_replace('{fpm_socket}', $fpm_socket, $content);
+
+			wf($vhost_conf_dir.'/ispconfig.vhost', $content);
 			
-		}
-		
-		//copy('tpl/apache_ispconfig.vhost.master', "$vhost_conf_dir/ispconfig.vhost");
-		//* and create the symlink
-		if($this->install_ispconfig_interface == true && $this->is_update == false) {
-			if(@is_link("$vhost_conf_enabled_dir/ispconfig.vhost")) unlink("$vhost_conf_enabled_dir/ispconfig.vhost");
-			if(!@is_link("$vhost_conf_enabled_dir/000-ispconfig.vhost")) {
-				exec("ln -s $vhost_conf_dir/ispconfig.vhost $vhost_conf_enabled_dir/000-ispconfig.vhost");
+			unset($content);
+			
+			// PHP-FPM
+			// Dont just copy over the php-fpm pool template but add some custom settings
+			$content = rf('tpl/php_fpm_pool.conf.master');
+			$content = str_replace('{fpm_pool}', 'ispconfig', $content);
+			//$content = str_replace('{fpm_port}', $conf['nginx']['php_fpm_start_port'], $content);
+			$content = str_replace('{fpm_socket}', $fpm_socket, $content);
+			$content = str_replace('{fpm_user}', 'ispconfig', $content);
+			$content = str_replace('{fpm_group}', 'ispconfig', $content);
+			wf($conf['nginx']['php_fpm_pool_dir'].'/ispconfig.conf', $content);
+
+			//copy('tpl/nginx_ispconfig.vhost.master', $vhost_conf_dir.'/ispconfig.vhost');
+			//* and create the symlink
+			if($this->install_ispconfig_interface == true && $this->is_update == false) {
+				if(@is_link($vhost_conf_enabled_dir.'/ispconfig.vhost')) unlink($vhost_conf_enabled_dir.'/ispconfig.vhost');
+				if(!@is_link($vhost_conf_enabled_dir.'/000-ispconfig.vhost')) {
+					symlink($vhost_conf_dir.'/ispconfig.vhost',$vhost_conf_enabled_dir.'/000-ispconfig.vhost');
+				}
 			}
+			
+			// create symlink from /usr/share/phpmyadmin to /usr/share/phpMyAdmin, if it is installed
+			if(!@file_exists('/usr/share/phpmyadmin') && @is_dir('/usr/share/phpMyAdmin')) symlink('/usr/share/phpMyAdmin/','/usr/share/phpmyadmin');
 		}
 		
 		// Make the Clamav log files readable by ISPConfig
@@ -899,9 +1020,11 @@ class installer_dist extends installer_base {
 		if(!is_dir($conf['ispconfig_log_dir'])) mkdir($conf['ispconfig_log_dir']);
 		if(!is_file($conf['ispconfig_log_dir'].'/ispconfig.log')) exec('touch '.$conf['ispconfig_log_dir'].'/ispconfig.log');
 		
-		exec('mv /usr/local/ispconfig/server/scripts/run-getmail.sh /usr/local/bin/run-getmail.sh');
-		exec('chown getmail /usr/local/bin/run-getmail.sh');
-		exec('chmod 744 /usr/local/bin/run-getmail.sh');
+		if(is_user('getmail')) {
+			exec('mv /usr/local/ispconfig/server/scripts/run-getmail.sh /usr/local/bin/run-getmail.sh');
+			exec('chown getmail /usr/local/bin/run-getmail.sh');
+			exec('chmod 744 /usr/local/bin/run-getmail.sh');
+		}
 		
 		// Edit the file Edit the file /etc/sudoers and comment out the requiregetty line, otherwise the backup function will fail
 		replaceLine('/etc/sudoers','Defaults    requiretty','#Defaults    requiretty',0,0);
@@ -950,6 +1073,11 @@ class installer_dist extends installer_base {
 			'* * * * * /usr/local/ispconfig/server/server.sh &> /dev/null',
 			'30 00 * * * /usr/local/ispconfig/server/cron_daily.sh &> /dev/null'
 		);
+		
+		if ($conf['nginx']['installed'] == true) {
+			$root_cron_jobs[] = "0 0 * * * /usr/local/ispconfig/server/scripts/create_daily_nginx_access_logs.sh &> /dev/null";
+		}
+		
 		foreach($root_cron_jobs as $cron_job) {
 			if(!in_array($cron_job."\n", $existing_root_cron_jobs)) {
 				$existing_root_cron_jobs[] = $cron_job."\n";

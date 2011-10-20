@@ -7,8 +7,9 @@
 [dns]
 
 [mail]
+enable_custom_login=n
 mailboxlist_webmail_link=y
-webmail_url=
+webmail_url=/webmail
 
 [monitor]
 
@@ -19,7 +20,7 @@ ftpuser_prefix=[CLIENTNAME]
 shelluser_prefix=[CLIENTNAME]
 webdavuser_prefix=[CLIENTNAME]
 dblist_phpmyadmin_link=y
-phpmyadmin_url=
+phpmyadmin_url=/phpmyadmin
 webftp_url=
 
 [tools]
@@ -29,4 +30,7 @@ use_domain_module=n
 new_domain_html=Please contact our support to create a new domain for you.
 
 [misc]
-dashboard_atom_url=http://www.ispconfig.org/atom
+dashboard_atom_url_admin=http://www.ispconfig.org/atom
+dashboard_atom_url_reseller=http://www.ispconfig.org/atom
+dashboard_atom_url_client=http://www.ispconfig.org/atom
+monitor_key=

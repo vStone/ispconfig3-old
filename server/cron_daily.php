@@ -28,8 +28,9 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-require('lib/config.inc.php');
-require('lib/app.inc.php');
+define('SCRIPT_PATH', dirname($_SERVER["SCRIPT_FILENAME"]));
+require(SCRIPT_PATH."/lib/config.inc.php");
+require(SCRIPT_PATH."/lib/app.inc.php");
 
 set_time_limit(0);
 
@@ -92,7 +93,7 @@ function setConfigVar( $filename, $varName, $varValue ) {
 		$out = '';
 		$found = 0;
 		foreach($lines as $line) {
-			list($key, $value) = preg_split('/[\t= ]+/', $line, 2);
+			@list($key, $value) = preg_split('/[\t= ]+/', $line, 2);
 			if($key == $varName) {
 				$out .= $varName.' '.$varValue."\n";
 				$found = 1;
@@ -116,7 +117,8 @@ $sql = "SELECT domain_id, domain, document_root FROM web_domain WHERE stats_type
 $records = $app->db->queryAllRecords($sql);
 
 foreach($records as $rec) {
-	$yesterday = date('Ymd',time() - 86400);
+	//$yesterday = date('Ymd',time() - 86400);
+	$yesterday = date('Ymd',strtotime("-1 day", time()));
 	$logfile = escapeshellcmd($rec['document_root'].'/log/'.$yesterday.'-access.log');
 	if(!@is_file($logfile)) {
 		$logfile = escapeshellcmd($rec['document_root'].'/log/'.$yesterday.'-access.log.gz');
@@ -130,6 +132,8 @@ foreach($records as $rec) {
 	$webalizer = '/usr/bin/webalizer';
 	$webalizer_conf_main = '/etc/webalizer/webalizer.conf';
 	$webalizer_conf = escapeshellcmd($rec['document_root'].'/log/webalizer.conf');
+	
+	unlink($statsdir.'/index.php');
 
 	if(!@is_file($webalizer_conf)) {
 		copy($webalizer_conf_main,$webalizer_conf);
@@ -156,7 +160,8 @@ $records = $app->db->queryAllRecords($sql);
 $web_config = $app->getconf->get_server_config($conf['server_id'], 'web');
 
 foreach($records as $rec) {
-	$yesterday = date('Ymd',time() - 86400);
+	//$yesterday = date('Ymd',time() - 86400);
+	$yesterday = date('Ymd',strtotime("-1 day", time()));
 	$logfile = escapeshellcmd($rec['document_root'].'/log/'.$yesterday.'-access.log');
 	if(!@is_file($logfile)) {
 		$logfile = escapeshellcmd($rec['document_root'].'/log/'.$yesterday.'-access.log.gz');
@@ -175,24 +180,66 @@ foreach($records as $rec) {
 	
 	if(is_file($awstats_website_conf_file)) unlink($awstats_website_conf_file);
 	
+	$sql = "SELECT domain FROM web_domain WHERE (type = 'alias' OR AND type = 'subdomain') server_id = ".$conf['server_id'];
+	$aliases = $app->db->queryAllRecords($sql);
+	$aliasdomain = '';
+	
+	if(is_array($aliases)) {
+		foreach ($aliases as $alias) {
+			$aliasdomain.= ' '.$alias['domain']. ' www.'.$alias['domain'];
+		}
+	}
+	
 	if(!is_file($awstats_website_conf_file)) {
 		$awstats_conf_file_content = 'Include "'.$awstats_conf_dir.'/awstats.conf"
 LogFile="/var/log/ispconfig/httpd/'.$domain.'/yesterday-access.log"
 SiteDomain="'.$domain.'"
-HostAliases="www.'.$domain.' localhost 127.0.0.1"';
+HostAliases="www.'.$domain.' localhost 127.0.0.1"'.$aliasdomain;
 		file_put_contents($awstats_website_conf_file,$awstats_conf_file_content);
 	}
 	
 	if(!@is_dir($statsdir)) mkdir($statsdir);
-	if(is_file('/var/log/ispconfig/httpd/'.$domain.'/yesterday-access.log')) unlink('/var/log/ispconfig/httpd/'.$domain.'/yesterday-access.log');
+	if(is_link('/var/log/ispconfig/httpd/'.$domain.'/yesterday-access.log')) unlink('/var/log/ispconfig/httpd/'.$domain.'/yesterday-access.log');
 	symlink($logfile,'/var/log/ispconfig/httpd/'.$domain.'/yesterday-access.log');
 	
+	$awmonth = date("n");
+	$awyear = date("Y");
+
+	if (date("d") == 1) {
+		$awmonth = date("m")-1;
+		if (date("m") == 1) {
+			$awyear = date("Y")-1;
+			$awmonth = "12";
+		}
+	}
+	
 	// awstats_buildstaticpages.pl -update -config=mydomain.com -lang=en -dir=/var/www/domain.com/web/stats -awstatsprog=/path/to/awstats.pl
-	$command = "$awstats_buildstaticpages_pl -update -config='$domain' -lang=en -dir='$statsdir' -awstatsprog='$awstats_pl'";
+	// $command = "$awstats_buildstaticpages_pl -update -config='$domain' -lang=".$conf['language']." -dir='$statsdir' -awstatsprog='$awstats_pl'";
+	
+	$command = "$awstats_buildstaticpages_pl -month='$awmonth' -year='$awyear' -update -config='$domain' -lang=".$conf['language']." -dir='$statsdir' -awstatsprog='$awstats_pl'";
+
+	if (date("d") == 2) {
+		$awmonth = date("m")-1;
+		if (date("m") == 1) {
+			$awyear = date("Y")-1;
+			$awmonth = "12";
+		}
+
+		$statsdirold = $statsdir."/".$awyear."-".$awmonth."/";
+		mkdir($statsdirold);
+		$files = scandir($statsdir);
+		foreach ($files as $file) {
+			if (substr($file,0,1) != "." && !is_dir($file) && substr($file,0,1) != "w" && substr($file,0,1) != "i") copy("$statsdir"."/"."$file","$statsdirold"."$file");
+		}
+	}
+	
 	
 	if($awstats_pl != '' && $awstats_buildstaticpages_pl != '' && fileowner($awstats_pl) == 0 && fileowner($awstats_buildstaticpages_pl) == 0) {
 		exec($command);
-		rename($rec['document_root'].'/web/stats/awstats.'.$domain.'.html',$rec['document_root'].'/web/stats/index.html');
+		if(is_file($rec['document_root'].'/web/stats/index.html')) unlink($rec['document_root'].'/web/stats/index.html');
+		rename($rec['document_root'].'/web/stats/awstats.'.$domain.'.html',$rec['document_root'].'/web/stats/awsindex.html');
+		if(!is_file($rec['document_root']."/web/stats/index.php")) copy("/usr/local/ispconfig/server/conf/awstats_index.php.master",$rec['document_root']."/web/stats/index.php");
+		
 		$app->log('Created awstats statistics with command: '.$command,LOGLEVEL_DEBUG);
 	} else {
 		$app->log("No awstats statistics created. Either $awstats_pl or $awstats_buildstaticpages_pl is not owned by root user.",LOGLEVEL_WARN);
@@ -235,6 +282,15 @@ foreach($records as $rec) {
 	if(@is_file($logfile)) {
 		unlink($logfile);
 	}
+	
+	//* Delete older Log files, in case that we missed them before due to serverdowntimes.
+	$datepart = date('Ym',time() - 86400 * 31 * 2);
+	
+	$logfile = escapeshellcmd($rec['document_root']).'/log/'.$datepart.'*-access.log.gz';
+	exec('rm -f '.$logfile);
+	
+	$logfile = escapeshellcmd($rec['document_root']).'/log/'.$datepart.'*-access.log';
+	exec('rm -f '.$logfile);
 }
 
 #######################################################################################################
@@ -392,6 +448,27 @@ if ($app->dbmaster == $app->db) {
 
 }
 
+
+#######################################################################################################
+// deactivate virtual servers (run only on the "master-server")
+#######################################################################################################
+
+if ($app->dbmaster == $app->db) {
+	$current_date = date('Y-m-d');
+
+	//* Check which virtual machines have to be deactivated
+	$sql = "SELECT * FROM openvz_vm WHERE active = 'y' AND active_until_date != '0000-00-00' AND active_until_date < '$current_date'";
+	$records = $app->db->queryAllRecords($sql);
+	if(is_array($records)) {
+		foreach($records as $rec) {
+			$app->dbmaster->datalogUpdate('openvz_vm', "active = 'n'", 'vm_id', $rec['vm_id']);
+			$app->log('Virtual machine active date expired. Disabling VM '.$rec['veid'],LOGLEVEL_DEBUG);
+		}
+	}
+
+
+}
+
 #######################################################################################################
 // Create website backups
 #######################################################################################################
@@ -401,8 +478,16 @@ $backup_dir = $server_config['backup_dir'];
 
 if($backup_dir != '') {
 	
+	if(isset($server_config['backup_dir_ftpread']) && $server_config['backup_dir_ftpread'] == 'y') {
+		$backup_dir_permissions = 0755;
+	} else {
+		$backup_dir_permissions = 0750;
+	}
+	
 	if(!is_dir($backup_dir)) {
-		mkdir(escapeshellcmd($backup_dir), 0750, true);
+		mkdir(escapeshellcmd($backup_dir), $backup_dir_permissions, true);
+	} else {
+		chmod(escapeshellcmd($backup_dir), $backup_dir_permissions);
 	}
 	
 	$sql = "SELECT * FROM web_domain WHERE type = 'vhost'";
@@ -419,17 +504,27 @@ if($backup_dir != '') {
 				$web_id = $rec['domain_id'];
 				$web_backup_dir = $backup_dir.'/web'.$web_id;
 				if(!is_dir($web_backup_dir)) mkdir($web_backup_dir, 0750);
-				
-				chmod($web_backup_dir, 0755);
-				chown($web_backup_dir, 'root');
-				chgrp($web_backup_dir, 'root');
+				chmod($web_backup_dir, 0750); 
+				if(isset($server_config['backup_dir_ftpread']) && $server_config['backup_dir_ftpread'] == 'y') {
+					chown($web_backup_dir, $rec['system_user']); 
+					chgrp($web_backup_dir, $rec['system_group']);
+				} else {
+					chown($web_backup_dir, 'root');
+					chgrp($web_backup_dir, 'root');
+				}
 				exec('cd '.escapeshellarg($web_path).' && sudo -u '.escapeshellarg($web_user).' find . -group '.escapeshellarg($web_group).' -print | zip -y '.escapeshellarg($web_backup_dir.'/web.zip').' -@');
+				chown($web_backup_dir.'/web.zip', $rec['system_user']); 
+				chgrp($web_backup_dir.'/web.zip', $rec['system_group']);
+				chmod($web_backup_dir.'/web.zip', 0750);
 				
 				// Rename or remove old backups
 				$backup_copies = intval($rec['backup_copies']);
-			
-				if(is_file($web_backup_dir.'/web.'.$backup_copies.'.zip')) unlink($web_backup_dir.'/web.'.$backup_copies.'.zip');
-			
+				
+				//* delete any older backup copies that previously existed
+				for ($n = $backup_copies; $n <= 10; $n++) {
+					if(is_file($web_backup_dir.'/web.'.$n.'.zip')) unlink($web_backup_dir.'/web.'.$n.'.zip');
+				}
+				
 				for($n = $backup_copies - 1; $n >= 1; $n--) {
 					if(is_file($web_backup_dir.'/web.'.$n.'.zip')) {
 						rename($web_backup_dir.'/web.'.$n.'.zip',$web_backup_dir.'/web.'.($n+1).'.zip');
@@ -441,6 +536,9 @@ if($backup_dir != '') {
 				// Create backupdir symlink
 				if(is_link($web_path.'/backup')) unlink($web_path.'/backup');
 				symlink($web_backup_dir,$web_path.'/backup');
+				// chmod($web_path.'/backup', 0755);
+				chown($web_path.'/backup', $rec['system_user']); 
+				chgrp($web_path.'/backup', $rec['system_group']);
 				
 			}
 			

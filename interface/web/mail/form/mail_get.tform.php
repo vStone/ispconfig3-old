@@ -118,10 +118,10 @@ $form["tabs"]['mailget'] = array (
 			'value'		=> array(0 => 'n',1 => 'y')
 		),
 		'source_read_all' => array (
-                        'datatype'      => 'VARCHAR',
-                        'formtype'      => 'CHECKBOX',
-                        'default'       => 'y',
-                        'value'         => array(0 => 'n',1 => 'y')
+			'datatype'	=> 'VARCHAR',
+			'formtype'	=> 'CHECKBOX',
+			'default'	=> 'y',
+			'value'		=> array(0 => 'n',1 => 'y')
 		),
 		'destination' => array (
 			'datatype'	=> 'VARCHAR',

@@ -1,5 +1,5 @@
 <?php
-$wb['list_head_txt'] = 'Traffic Web';
+$wb['list_head_txt'] = 'trafic Web';
 $wb['domain_txt'] = 'Domaine';
 $wb['this_month_txt'] = 'Ce mois';
 $wb['last_month_txt'] = 'Mois précédent';

@@ -90,22 +90,29 @@ $info = array();
  * Check the ISPConfig-Version (only for the admin)
 */
 if($_SESSION["s"]["user"]["typ"] == 'admin') {
-	$new_version = @file_get_contents('http://www.ispconfig.org/downloads/ispconfig3_version.txt');
-	$new_version = trim($new_version);
-	$this_version = explode(".",ISPC_APP_VERSION);
+	if(!isset($_SESSION['s']['new_ispconfig_version'])) {
+		$new_version = @file_get_contents('http://www.ispconfig.org/downloads/ispconfig3_version.txt');
+		$_SESSION['s']['new_ispconfig_version'] = trim($new_version);
+	}
+	$v1 = ISPC_APP_VERSION;
+	$v2 = $_SESSION['s']['new_ispconfig_version'];
+	$this_version = explode(".",$v1);
 	$this_fullversion = (($this_version[0] < 10) ? '0'.$this_version[0] : $this_version[0]) .
 			    (($this_version[1] < 10) ? '0'.$this_version[1] : $this_version[1]) .
 			    (($this_version[2] < 10) ? '0'.$this_version[2] : $this_version[2]) .
 			    (($this_version[3] < 10) ? (($this_version[3] < 1) ? '00' : '0'.$this_version[3]) : $this_version[3]);
 
 
-	$new_version = explode(".",$new_version);
+	$new_version = explode(".",$v2);
 	$new_fullversion =  (($new_version[0] < 10) ? '0'.$new_version[0] : $new_version[0]) .
 			    (($new_version[1] < 10) ? '0'.$new_version[1] : $new_version[1]) .
 			    (($new_version[2] < 10) ? '0'.$new_version[2] : $new_version[2]) .
 			    (($new_version[3] < 10) ? (($new_version[3] < 1) ? '00' : '0'.$new_version[3]) : $new_version[3]);
 	if($new_fullversion > $this_fullversion) {
-		$info[] = array('info_msg' => 'There is a new Version of ISPConfig 3 available! <a href="http://www.ispconfig.org/ispconfig-3/download">See more...</a>');
+		$info[] = array('info_msg' => 'There is a new Version of ISPConfig 3 available!<br>' . 
+			'This Version: ' . $v1 . '<br>' . 
+			'New Version : ' . $v2 . 
+			'<br><br><a href="http://www.ispconfig.org/ispconfig-3/download" target="ISPC">See more...</a>');
 	}
 }
 
@@ -126,7 +133,7 @@ while ($file = @readdir ($handle)) {
 
 /* Which dashlets in which column */
 /******************************************************************************/
-$leftcol_dashlets = array('modules');
+$leftcol_dashlets = array('modules','invoices');
 $rightcol_dashlets = array('limits');
 /******************************************************************************/
 

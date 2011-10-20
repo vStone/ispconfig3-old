@@ -125,6 +125,11 @@ $conf['postfix']['vmail_groupid'] = '5000';
 $conf['postfix']['vmail_groupname'] = 'vmail';
 $conf['postfix']['vmail_mailbox_base'] = '/var/vmail';
 
+//* Mailman
+$conf['mailman']['installed'] = false; // will be detected automatically during installation
+$conf['mailman']['config_dir'] = '/etc/mailman';
+$conf['mailman']['init_script'] = 'mailman';
+
 //* Getmail
 $conf['getmail']['installed'] = false; // will be detected automatically during installation
 $conf['getmail']['user'] = 'getmail';
@@ -194,6 +199,27 @@ $conf['jailkit']['jk_init'] = 'jk_init.ini';
 $conf['jailkit']['jk_chrootsh'] = 'jk_chrootsh.ini';
 $conf['jailkit']['jailkit_chroot_app_programs'] = '/bin/groups /usr/bin/id /usr/bin/dircolors /usr/bin/less /usr/bin/basename /usr/bin/dirname /usr/bin/nano /usr/bin/vim';
 
+//* Squid
+$conf['squid']['installed'] = false; // will be detected automatically during installation
+$conf['squid']['config_dir'] = '/etc/squid';
+$conf['squid']['init_script'] = 'squid';
+
+//* Nginx
+$conf['nginx']['installed'] = false; // will be detected automatically during installation
+$conf['nginx']['user'] = 'nginx';
+$conf['nginx']['group'] = 'nginx';
+$conf['nginx']['config_dir'] = '/etc/nginx';
+$conf['nginx']['vhost_conf_dir'] = '/etc/nginx/sites-available';
+$conf['nginx']['vhost_conf_enabled_dir'] = '/etc/nginx/sites-enabled';
+$conf['nginx']['init_script'] = 'nginx';
+$conf['nginx']['vhost_port'] = '8080';
+$conf['nginx']['cgi_socket'] = '/var/run/fcgiwrap.socket';
+$conf['nginx']['php_fpm_init_script'] = 'php5-fpm';
+$conf['nginx']['php_fpm_ini_path'] = '/etc/php5/fpm/php.ini';
+$conf['nginx']['php_fpm_pool_dir'] = '/etc/php5/fpm/pool.d';
+$conf['nginx']['php_fpm_start_port'] = 9010;
+$conf['nginx']['php_fpm_socket_dir'] = '/var/lib/php5-fpm';
+
 //* vlogger
 $conf['vlogger']['config_dir'] = '/etc/vlogger';
 
@@ -202,4 +228,8 @@ $conf['cron']['init_script'] = 'vixie-cron';
 $conf['cron']['crontab_dir'] = '/etc/cron.d';
 $conf['cron']['group'] = 'cron';
 $conf['cron']['wget'] = '/usr/bin/wget';
+
+//* OpenVZ
+$conf['openvz']['installed'] = false;
+
 ?>

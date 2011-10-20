@@ -1,6 +1,6 @@
 <?php
-$wb['confirm_action_txt'] = 'Confirm action';
-$wb['delete_explanation'] = 'This action will delete the following number of records associated with this client';
-$wb['btn_save_txt'] = 'Delete the client';
-$wb['btn_cancel_txt'] = 'Cancel without deleting the client';
+$wb['confirm_action_txt'] = 'Confirmer laction';
+$wb['delete_explanation'] = 'Cette action va supprimer le nombre denregistrements suivants associés avec le client';
+$wb['btn_save_txt'] = 'Effacer le client';
+$wb['btn_cancel_txt'] = 'Annuler sans effacer le client';
 ?>

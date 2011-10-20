@@ -1,5 +1,5 @@
 <?php
-$wb['list_head_txt'] = 'Szoftvare frissítések';
+$wb['list_head_txt'] = 'Szoftver frissítések';
 $wb['installed_txt'] = 'Művelet';
 $wb['update_title_txt'] = 'Frissítés';
 $wb['version_txt'] = 'Verzió';

@@ -1,1 +1,4 @@
-ALTER TABLE `mail_get` ADD ( `source_read_all` varchar(255) NOT NULL default 'n');
+-- database patch for rsa-key based shell access.
+ALTER TABLE `client` ADD `id_rsa` VARCHAR( 2000 ) NOT NULL ;
+ALTER TABLE `client` ADD `ssh_rsa` VARCHAR( 600 ) NOT NULL ;
+ALTER TABLE `shell_user` ADD `ssh_rsa` VARCHAR( 600 ) NOT NULL ;

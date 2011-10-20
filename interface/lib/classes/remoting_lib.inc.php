@@ -325,10 +325,18 @@ class remoting_lib {
                                 break;
 								case 'DATE':
                                         if($record[$key] != '' && $record[$key] != '0000-00-00') {
-                                                list($tag,$monat,$jahr) = explode('.',$record[$key]);
-                                                $new_record[$key] = $jahr.'-'.$monat.'-'.$tag;
-												//$tmp = strptime($record[$key],$this->dateformat);
-												//$new_record[$key] = ($tmp['tm_year']+1900).'-'.($tmp['tm_mon']+1).'-'.$tmp['tm_mday'];
+												if(function_exists('date_parse_from_format')) {
+													$date_parts = date_parse_from_format($this->dateformat,$record[$key]);
+													//list($tag,$monat,$jahr) = explode('.',$record[$key]);
+													$new_record[$key] = $date_parts['year'].'-'.$date_parts['month'].'-'.$date_parts['day'];
+													//$tmp = strptime($record[$key],$this->dateformat);
+													//$new_record[$key] = ($tmp['tm_year']+1900).'-'.($tmp['tm_mon']+1).'-'.$tmp['tm_mday'];
+												} else {
+													//$tmp = strptime($record[$key],$this->dateformat);
+													//$new_record[$key] = ($tmp['tm_year']+1900).'-'.($tmp['tm_mon']+1).'-'.$tmp['tm_mday'];
+													$tmp = strtotime($record[$key]);
+													$new_record[$key] = date('Y-m-d',$tmp);
+												}
                                         } else {
 											$new_record[$key] = '0000-00-00';
 										}
@@ -522,15 +530,7 @@ class remoting_lib {
                                                 if($field['formtype'] == 'PASSWORD') {
                                                         $sql_insert_key .= "`$key`, ";
                                                         if($field['encryption'] == 'CRYPT') {
-                                                                $salt="$1$";
-																$base64_alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-																for ($n=0;$n<8;$n++) {
-																	//$salt.=chr(mt_rand(64,126));
-																	$salt.=$base64_alphabet[mt_rand(0,63)];
-																}
-																$salt.="$";
-																// $salt = substr(md5(time()),0,2);
-																$record[$key] = crypt($record[$key],$salt);
+                                                                $record[$key] = $app->auth->crypt_password(stripslashes($record[$key]));
                                                         } else {
                                                                 $record[$key] = md5($record[$key]);
                                                         }
@@ -551,15 +551,7 @@ class remoting_lib {
                                         } else {
                                                 if($field['formtype'] == 'PASSWORD') {
 														if($field['encryption'] == 'CRYPT') {
-                                                                $salt="$1$";
-																$base64_alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-																for ($n=0;$n<8;$n++) {
-																	//$salt.=chr(mt_rand(64,126));
-																	$salt.=$base64_alphabet[mt_rand(0,63)];
-																}
-																$salt.="$";
-																// $salt = substr(md5(time()),0,2);
-																$record[$key] = crypt($record[$key],$salt);
+                                                                $record[$key] = $app->auth->crypt_password(stripslashes($record[$key]));
                                                         } else {
                                                                 $record[$key] = md5($record[$key]);
                                                         }
@@ -685,17 +677,20 @@ class remoting_lib {
 			$language = $app->db->quote($params["language"]);
 			$groupid = $app->db->datalogInsert('sys_group', "(name,description,client_id) VALUES ('$username','','$insert_id')", 'groupid');
 			$groups = $groupid;
+			$password = $app->auth->crypt_password(stripslashes($password));
 			$sql1 = "INSERT INTO sys_user (username,passwort,modules,startmodule,app_theme,typ,active,language,groups,default_group,client_id)
-			VALUES ('$username',md5('$password'),'$modules','$startmodule','$usertheme','$type','$active','$language',$groups,$groupid,$insert_id)";
+			VALUES ('$username','$password','$modules','$startmodule','$usertheme','$type','$active','$language',$groups,$groupid,$insert_id)";
 			$app->db->query($sql1);
 		}
 		
 		function ispconfig_sysuser_update($params,$client_id){
 			global $app;
 			$username = $app->db->quote($params["username"]);
-			$password = $app->db->quote($params["password"]);
+			$clear_password = $app->db->quote($params["password"]);
 			$client_id = intval($client_id);
-			$sql = "UPDATE sys_user set username = '$username', passwort = md5('$password') WHERE client_id = $client_id";
+			$password = $app->auth->crypt_password(stripslashes($clear_password));
+			if ($clear_password) $pwstring = ", passwort = '$password'"; else $pwstring ="" ;
+			$sql = "UPDATE sys_user set username = '$username' $pwstring WHERE client_id = $client_id";
 			$app->db->query($sql);
 		}
 		
@@ -703,6 +698,8 @@ class remoting_lib {
 			global $app;
 			$client_id = intval($client_id);
 			$sql = "DELETE FROM sys_user WHERE client_id = $client_id";
+			$app->db->query($sql);
+			$sql = "DELETE FROM sys_group WHERE client_id = $client_id";
 			$app->db->query($sql);
 		}
 

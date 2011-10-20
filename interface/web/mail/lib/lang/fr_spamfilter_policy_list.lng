@@ -1,5 +1,5 @@
 <?php
-$wb['list_head_txt'] = 'Politique du filtre à spam';
+$wb['list_head_txt'] = 'Stratégie du filtre antispam';
 $wb['policy_name_txt'] = 'Nom';
 $wb['virus_lover_txt'] = 'Aime les virus';
 $wb['spam_lover_txt'] = 'Aime le spam';

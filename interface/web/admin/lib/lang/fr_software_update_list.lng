@@ -1,5 +1,5 @@
 <?php
-$wb['list_head_txt'] = 'Mises à jour des logiciels';
+$wb['list_head_txt'] = 'Mise à jour des logiciels';
 $wb['installed_txt'] = 'Action';
 $wb['update_title_txt'] = 'Mise à jour';
 $wb['version_txt'] = 'Version';

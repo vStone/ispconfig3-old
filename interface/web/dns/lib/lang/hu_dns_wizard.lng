@@ -1,9 +1,9 @@
 <?php
 $wb['template_id_txt'] = 'Template';
-$wb['server_id_txt'] = 'Server';
-$wb['client_txt'] = 'Client';
-$wb['btn_save_txt'] = 'Create DNS Record';
-$wb['btn_cancel_txt'] = 'Cancel';
+$wb['server_id_txt'] = 'Szerver';
+$wb['client_txt'] = 'Ügyfél';
+$wb['btn_save_txt'] = 'DNS rekord létrehozása';
+$wb['btn_cancel_txt'] = 'Mégsem';
 $wb['domain_txt'] = 'Domain';
 $wb['email_txt'] = 'Email';
 $wb['ns1_txt'] = 'NS 1';

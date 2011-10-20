@@ -34,6 +34,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		var $dbUser = '';		// database authorized user
 		var $dbPass = '';		// user's password
 		var $dbCharset = 'utf8';// Database charset
+		var $dbNewLink = false; // Return a new linkID when connect is called again
+		var $dbClientFlags = 0; // MySQL Client falgs
 		var $linkId = 0;		// last result of mysql_connect()
 		var $queryId = 0;		// last result of mysql_query()
 		var $record	= array();	// last record fetched
@@ -45,8 +47,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		var $show_error_messages = true;
 
 		// constructor
-		function db()
-		{
+		public function __construct() {
 			
 			global $conf;
 			$this->dbHost = $conf['db_host'];
@@ -54,15 +55,21 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 			$this->dbUser = $conf['db_user'];
 			$this->dbPass = $conf['db_password'];
 			$this->dbCharset = $conf['db_charset'];
+			$this->dbNewLink = $conf['db_new_link'];
+			$this->dbClientFlags = $conf['db_client_flags'];
 			//$this->connect();
+		}
+		
+		public function __destruct() {
+			$this->closeConn();
 		}
 
 		// error handler
 		function updateError($location)
 		{
 			global $app;
-			$this->errorNumber = mysql_errno($this->linkId);
-			$this->errorMessage = mysql_error($this->linkId);
+			$this->errorNumber = @mysql_errno($this->linkId);
+			$this->errorMessage = @mysql_error($this->linkId);
 			$this->errorLocation = $location;
 			if($this->errorNumber && $this->show_error_messages && method_exists($app,'log'))
 			{
@@ -76,7 +83,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		{
 			if($this->linkId == 0)
 			{
-				$this->linkId = mysql_connect($this->dbHost, $this->dbUser, $this->dbPass);
+				$this->linkId = @mysql_connect($this->dbHost, $this->dbUser, $this->dbPass, $this->dbNewLink, $this->dbClientFlags);
 				if(!$this->linkId)
 				{
 					$this->updateError('DB::connect()-> mysql_connect');
@@ -463,7 +470,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        return $this->query($sql);
        }
        
-       // gibt Array mit Tabellennamen zurück
+       // gibt Array mit Tabellennamen zurï¿½ck
        function getTables($database_name = '') {
 	   	
 			if($database_name == '') $database_name = $this->dbName;
@@ -474,7 +481,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             return $tb_names;       
        }
        
-       // gibt Feldinformationen zur Tabelle zurück
+       // gibt Feldinformationen zur Tabelle zurï¿½ck
        /*
        $columns = array(action =>   add | alter | drop
                         name =>     Spaltenname

@@ -52,9 +52,17 @@ class validate_cron {
             
             if($parsed["scheme"] != "http" && $parsed["scheme"] != "https") return $this->get_error($validator['errmsg']);
             
-            if(preg_match("'^([a-z0-9][a-z0-9-]{0,62}\.)+([a-z]{2,4})$'i", $parsed["host"]) == false) return $this->get_error($validator['errmsg']);
+            if(preg_match("'^([a-z0-9][a-z0-9-]{0,62}\.)+([a-z]{2,30})$'i", $parsed["host"]) == false) return $this->get_error($validator['errmsg']);
         }
     }
+	
+	function run_month_format($field_name, $field_value, $validator) {
+		global $app;
+		//* allow value @reboot in month field
+		if($field_value != '@reboot') {
+			return $this->run_time_format($field_name, $field_value, $validator);
+		}
+	}
     
 	/*
 		Validator function to check if a given cron time is in correct form.
@@ -70,7 +78,7 @@ class validate_cron {
         if(preg_match("'^[0-9\-\,\/\*]+$'", $field_value) == false) return $this->get_error($validator['errmsg']); // allowed characters are 0-9, comma, *, -, /
         elseif(preg_match("'[\-\,\/][\-\,\/]'", $field_value) == true) return $this->get_error($validator['errmsg']); // comma, - and / never stand together
         //* now split list and check each entry. store used values in array for later limit-check
-        $time_list = split(",", $field_value);
+        $time_list = explode(",", $field_value);
         if(count($time_list) < 1) return $this->get_error($validator['errmsg']);
         
         $max_entry = 0;

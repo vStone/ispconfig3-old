@@ -82,7 +82,7 @@ class page_action extends tform_actions {
 	function onShowEnd() {
 		global $app, $conf;
 
-		//* Client: If the logged in user is not admin and has no sub clients (no rseller)
+		//* Client: If the logged in user is not admin and has no sub clients (no reseller)
 		if($_SESSION["s"]["user"]["typ"] != 'admin' && !$app->auth->has_clients($_SESSION['s']['user']['userid'])) {
 
 			// Get the limits of the client
@@ -94,10 +94,8 @@ class page_action extends tform_actions {
 			$app->tpl->setVar("server_id","<option value='$client[default_webserver]'>$tmp[server_name]</option>");
 			unset($tmp);
 
-			// Fill the IP select field with the IP addresses that are allowed for this client
-			// $ip_select = "<option value='*'>*</option>";
-			// $app->tpl->setVar("ip_address",$ip_select);
-			$sql = "SELECT ip_address FROM server_ip WHERE server_id = ".$client['default_webserver'];
+			//* Fill the IPv4 select field with the IP addresses that are allowed for this client
+			$sql = "SELECT ip_address FROM server_ip WHERE server_id = ".$client['default_webserver']." AND ip_type = 'IPv4' AND (client_id = 0 OR client_id=".$_SESSION['s']['user']['client_id'].")";
 			$ips = $app->db->queryAllRecords($sql);
 			$ip_select = "<option value='*'>*</option>";
 			//$ip_select = "";
@@ -110,8 +108,23 @@ class page_action extends tform_actions {
 			$app->tpl->setVar("ip_address",$ip_select);
 			unset($tmp);
 			unset($ips);
+			
+			//* Fill the IPv6 select field with the IP addresses that are allowed for this client
+			$sql = "SELECT ip_address FROM server_ip WHERE server_id = ".$client['default_webserver']." AND ip_type = 'IPv6' AND (client_id = 0 OR client_id=".$_SESSION['s']['user']['client_id'].")";
+			$ips = $app->db->queryAllRecords($sql);
+			$ip_select = "<option value=''></option>";
+			//$ip_select = "";
+			if(is_array($ips)) {
+				foreach( $ips as $ip) {
+					$selected = ($ip["ip_address"] == $this->dataRecord["ipv6_address"])?'SELECTED':'';
+					$ip_select .= "<option value='$ip[ip_address]' $selected>$ip[ip_address]</option>\r\n";
+				}
+			}
+			$app->tpl->setVar("ipv6_address",$ip_select);
+			unset($tmp);
+			unset($ips);
 
-			//* Reseller: If the logged in user is not admin and has sub clients (is a rseller)
+			//* Reseller: If the logged in user is not admin and has sub clients (is a reseller)
 		} elseif ($_SESSION["s"]["user"]["typ"] != 'admin' && $app->auth->has_clients($_SESSION['s']['user']['userid'])) {
 
 			// Get the limits of the client
@@ -137,10 +150,8 @@ class page_action extends tform_actions {
 			}
 			$app->tpl->setVar("client_group_id",$client_select);
 
-			// Fill the IP select field with the IP addresses that are allowed for this client
-			//$ip_select = "<option value='*'>*</option>";
-			//$app->tpl->setVar("ip_address",$ip_select);
-			$sql = "SELECT ip_address FROM server_ip WHERE server_id = ".$client['default_webserver'];
+			//* Fill the IPv4 select field with the IP addresses that are allowed for this client
+			$sql = "SELECT ip_address FROM server_ip WHERE server_id = ".$client['default_webserver']." AND ip_type = 'IPv4' AND (client_id = 0 OR client_id=".$_SESSION['s']['user']['client_id'].")";
 			$ips = $app->db->queryAllRecords($sql);
 			$ip_select = "<option value='*'>*</option>";
 			//$ip_select = "";
@@ -151,6 +162,21 @@ class page_action extends tform_actions {
 				}
 			}
 			$app->tpl->setVar("ip_address",$ip_select);
+			unset($tmp);
+			unset($ips);
+			
+			//* Fill the IPv6 select field with the IP addresses that are allowed for this client
+			$sql = "SELECT ip_address FROM server_ip WHERE server_id = ".$client['default_webserver']." AND ip_type = 'IPv6' AND (client_id = 0 OR client_id=".$_SESSION['s']['user']['client_id'].")";
+			$ips = $app->db->queryAllRecords($sql);
+			$ip_select = "<option value=''></option>";
+			//$ip_select = "";
+			if(is_array($ips)) {
+				foreach( $ips as $ip) {
+					$selected = ($ip["ip_address"] == $this->dataRecord["ipv6_address"])?'SELECTED':'';
+					$ip_select .= "<option value='$ip[ip_address]' $selected>$ip[ip_address]</option>\r\n";
+				}
+			}
+			$app->tpl->setVar("ipv6_address",$ip_select);
 			unset($tmp);
 			unset($ips);
 
@@ -165,8 +191,9 @@ class page_action extends tform_actions {
 				$tmp = $app->db->queryOneRecord("SELECT server_id FROM server WHERE web_server = 1 ORDER BY server_name LIMIT 0,1");
 				$server_id = $tmp['server_id'];
 			}
-
-			$sql = "SELECT ip_address FROM server_ip WHERE server_id = $server_id";
+		
+			//* Fill the IPv4 select field
+			$sql = "SELECT ip_address FROM server_ip WHERE ip_type = 'IPv4' AND server_id = $server_id";
 			$ips = $app->db->queryAllRecords($sql);
 			$ip_select = "<option value='*'>*</option>";
 			//$ip_select = "";
@@ -177,6 +204,21 @@ class page_action extends tform_actions {
 				}
 			}
 			$app->tpl->setVar("ip_address",$ip_select);
+			unset($tmp);
+			unset($ips);
+			
+			//* Fill the IPv6 select field
+			$sql = "SELECT ip_address FROM server_ip WHERE ip_type = 'IPv6' AND server_id = $server_id";
+			$ips = $app->db->queryAllRecords($sql);
+			$ip_select = "<option value=''></option>";
+			//$ip_select = "";
+			if(is_array($ips)) {
+				foreach( $ips as $ip) {
+					$selected = ($ip["ip_address"] == $this->dataRecord["ipv6_address"])?'SELECTED':'';
+					$ip_select .= "<option value='$ip[ip_address]' $selected>$ip[ip_address]</option>\r\n";
+				}
+			}
+			$app->tpl->setVar("ipv6_address",$ip_select);
 			unset($tmp);
 			unset($ips);
 
@@ -278,12 +320,12 @@ class page_action extends tform_actions {
 			$client_group_id = $_SESSION["s"]["user"]["default_group"];
 			$client = $app->db->queryOneRecord("SELECT limit_traffic_quota, limit_web_domain, default_webserver, parent_client_id, limit_web_quota FROM sys_group, client WHERE sys_group.client_id = client.client_id and sys_group.groupid = $client_group_id");
 
-			//* Check the website quota
+			//* Check the website quota of the client
 			if(isset($_POST["hd_quota"]) && $client["limit_web_quota"] >= 0) {
 				$tmp = $app->db->queryOneRecord("SELECT sum(hd_quota) as webquota FROM web_domain WHERE domain_id != ".intval($this->id)." AND ".$app->tform->getAuthSQL('u'));
 				$webquota = $tmp["webquota"];
 				$new_web_quota = intval($this->dataRecord["hd_quota"]);
-				if(($webquota + $new_web_quota > $client["limit_web_quota"]) || ($new_web_quota == -1 && $client["limit_web_quota"] != -1)) {
+				if(($webquota + $new_web_quota > $client["limit_web_quota"]) || ($new_web_quota < 0 && $client["limit_web_quota"] >= 0)) {
 					$max_free_quota = floor($client["limit_web_quota"] - $webquota);
 					if($max_free_quota < 0) $max_free_quota = 0;
 					$app->tform->errorMessage .= $app->tform->lng("limit_web_quota_free_txt").": ".$max_free_quota." MB<br>";
@@ -294,12 +336,12 @@ class page_action extends tform_actions {
 				unset($tmp_quota);
 			}
 
-			//* Check the traffic quota
+			//* Check the traffic quota of the client
 			if(isset($_POST["traffic_quota"]) && $client["limit_traffic_quota"] > 0) {
 				$tmp = $app->db->queryOneRecord("SELECT sum(traffic_quota) as trafficquota FROM web_domain WHERE domain_id != ".intval($this->id)." AND ".$app->tform->getAuthSQL('u'));
 				$trafficquota = $tmp["trafficquota"];
 				$new_traffic_quota = intval($this->dataRecord["traffic_quota"]);
-				if(($trafficquota + $new_traffic_quota > $client["limit_traffic_quota"]) || ($new_traffic_quota == -1 && $client["limit_traffic_quota"] != -1)) {
+				if(($trafficquota + $new_traffic_quota > $client["limit_traffic_quota"]) || ($new_traffic_quota < 0 && $client["limit_traffic_quota"] >= 0)) {
 					$max_free_quota = floor($client["limit_traffic_quota"] - $trafficquota);
 					if($max_free_quota < 0) $max_free_quota = 0;
 					$app->tform->errorMessage .= $app->tform->lng("limit_traffic_quota_free_txt").": ".$max_free_quota." MB<br>";
@@ -308,6 +350,43 @@ class page_action extends tform_actions {
 				}
 				unset($tmp);
 				unset($tmp_quota);
+			}
+			
+			if($client['parent_client_id'] > 0) {
+				// Get the limits of the reseller
+				$reseller = $app->db->queryOneRecord("SELECT limit_traffic_quota, limit_web_domain, default_webserver, limit_web_quota FROM client WHERE client_id = ".$client['parent_client_id']);
+
+				//* Check the website quota of the client
+				if(isset($_POST["hd_quota"]) && $reseller["limit_web_quota"] >= 0) {
+					$tmp = $app->db->queryOneRecord("SELECT sum(hd_quota) as webquota FROM web_domain WHERE domain_id != ".intval($this->id)." AND ".$app->tform->getAuthSQL('u'));
+					$webquota = $tmp["webquota"];
+					$new_web_quota = intval($this->dataRecord["hd_quota"]);
+					if(($webquota + $new_web_quota > $reseller["limit_web_quota"]) || ($new_web_quota < 0 && $reseller["limit_web_quota"] >= 0)) {
+						$max_free_quota = floor($reseller["limit_web_quota"] - $webquota);
+						if($max_free_quota < 0) $max_free_quota = 0;
+						$app->tform->errorMessage .= $app->tform->lng("limit_web_quota_free_txt").": ".$max_free_quota." MB<br>";
+						// Set the quota field to the max free space
+						$this->dataRecord["hd_quota"] = $max_free_quota;
+					}
+					unset($tmp);
+					unset($tmp_quota);
+				}
+
+				//* Check the traffic quota of the client
+				if(isset($_POST["traffic_quota"]) && $reseller["limit_traffic_quota"] > 0) {
+					$tmp = $app->db->queryOneRecord("SELECT sum(traffic_quota) as trafficquota FROM web_domain WHERE domain_id != ".intval($this->id)." AND ".$app->tform->getAuthSQL('u'));
+					$trafficquota = $tmp["trafficquota"];
+					$new_traffic_quota = intval($this->dataRecord["traffic_quota"]);
+					if(($trafficquota + $new_traffic_quota > $reseller["limit_traffic_quota"]) || ($new_traffic_quota < 0 && $reseller["limit_traffic_quota"] >= 0)) {
+						$max_free_quota = floor($reseller["limit_traffic_quota"] - $trafficquota);
+						if($max_free_quota < 0) $max_free_quota = 0;
+						$app->tform->errorMessage .= $app->tform->lng("limit_traffic_quota_free_txt").": ".$max_free_quota." MB<br>";
+						// Set the quota field to the max free space
+						$this->dataRecord["traffic_quota"] = $max_free_quota;
+					}
+					unset($tmp);
+					unset($tmp_quota);
+				}
 			}
 
 			// When the record is updated
@@ -318,9 +397,8 @@ class page_action extends tform_actions {
 				unset($tmp);
 				// When the record is inserted
 			} else {
-				// set the server ID to the default mailserver of the client
+				//* set the server ID to the default webserver of the client
 				$this->dataRecord["server_id"] = $client["default_webserver"];
-
 
 				// Check if the user may add another web_domain
 				if($client["limit_web_domain"] >= 0) {
@@ -331,7 +409,6 @@ class page_action extends tform_actions {
 				}
 
 			}
-			
 
 			// Clients may not set the client_group_id, so we unset them if user is not a admin and the client is not a reseller
 			if(!$app->auth->has_clients($_SESSION['s']['user']['userid'])) unset($this->dataRecord["client_group_id"]);
@@ -339,7 +416,25 @@ class page_action extends tform_actions {
 		
 		//* make sure that the email domain is lowercase
 		if(isset($this->dataRecord["domain"])) $this->dataRecord["domain"] = strtolower($this->dataRecord["domain"]);
-
+		
+		//* get the server config for this server
+		$app->uses("getconf");
+		$web_config = $app->getconf->get_server_config(intval($this->dataRecord["server_id"]),'web');
+		//* Check for duplicate ssl certs per IP if SNI is disabled
+		if(isset($this->dataRecord['ssl']) && $this->dataRecord['ssl'] == 'y' && $web_config['enable_sni'] != 'y') {
+			$sql = "SELECT count(domain_id) as number FROM web_domain WHERE `ssl` = 'y' AND ip_address = '".$app->db->quote($this->dataRecord['ip_address'])."' and domain_id != ".$this->id;
+			$tmp = $app->db->queryOneRecord($sql);
+			if($tmp['number'] > 0) $app->tform->errorMessage .= $app->tform->lng("error_no_sni_txt");
+		}
+		
+		// Check if pm.max_children >= pm.max_spare_servers >= pm.start_servers >= pm.min_spare_servers > 0
+		if(isset($this->dataRecord['pm_max_children'])) {
+			if(intval($this->dataRecord['pm_max_children']) >= intval($this->dataRecord['pm_max_spare_servers']) && intval($this->dataRecord['pm_max_spare_servers']) >= intval($this->dataRecord['pm_start_servers']) && intval($this->dataRecord['pm_start_servers']) >= intval($this->dataRecord['pm_min_spare_servers']) && intval($this->dataRecord['pm_min_spare_servers']) > 0){
+		
+			} else {
+				$app->tform->errorMessage .= $app->tform->lng("error_php_fpm_pm_settings_txt").'<br>';
+			}
+		}
 
 		parent::onSubmit();
 	}
@@ -347,7 +442,7 @@ class page_action extends tform_actions {
 	function onAfterInsert() {
 		global $app, $conf;
 
-		// make sure that the record belongs to the clinet group and not the admin group when a dmin inserts it
+		// make sure that the record belongs to the clinet group and not the admin group when admin inserts it
 		// also make sure that the user can not delete domain created by a admin
 		if($_SESSION["s"]["user"]["typ"] == 'admin' && isset($this->dataRecord["client_group_id"])) {
 			$client_group_id = intval($this->dataRecord["client_group_id"]);
@@ -491,7 +586,7 @@ class page_action extends tform_actions {
 			// Update the FTP user(s) too
 			$records = $app->db->queryAllRecords("SELECT ftp_user_id FROM ftp_user WHERE parent_domain_id = ".$this->id);
 			foreach($records as $rec) {
-				$app->db->datalogUpdate('ftp_user', "uid = '$system_user', gid = '$system_group', dir = '$document_root'", 'ftp_user_id', $rec['ftp_user_id']);
+				$app->db->datalogUpdate('ftp_user', "sys_userid = '".$web_rec['sys_userid']."', sys_groupid = '".$web_rec['sys_groupid']."', uid = '$system_user', gid = '$system_group', dir = '$document_root'", 'ftp_user_id', $rec['ftp_user_id']);
 			}
 			unset($records);
 			unset($rec);
@@ -499,7 +594,15 @@ class page_action extends tform_actions {
 			// Update the Shell user(s) too
 			$records = $app->db->queryAllRecords("SELECT shell_user_id FROM shell_user WHERE parent_domain_id = ".$this->id);
 			foreach($records as $rec) {
-				$app->db->datalogUpdate('shell_user', "puser = '$system_user', pgroup = '$system_group', dir = '$document_root'", 'shell_user_id', $rec['shell_user_id']);
+				$app->db->datalogUpdate('shell_user', "sys_userid = '".$web_rec['sys_userid']."', sys_groupid = '".$web_rec['sys_groupid']."', puser = '$system_user', pgroup = '$system_group', dir = '$document_root'", 'shell_user_id', $rec['shell_user_id']);
+			}
+			unset($records);
+			unset($rec);
+			
+			//* Update all subdomains and alias domains
+			$records = $app->db->queryAllRecords("SELECT domain_id FROM web_domain WHERE parent_domain_id = ".$this->id);
+			foreach($records as $rec) {
+				$app->db->datalogUpdate('web_domain', "sys_userid = '".$web_rec['sys_userid']."', sys_groupid = '".$web_rec['sys_groupid']."'", 'domain_id', $rec['domain_id']);
 			}
 			unset($records);
 			unset($rec);
@@ -518,12 +621,16 @@ class page_action extends tform_actions {
 			unset($subdomain);
 		}
 
-		//* Set allow_override and php_open_basedir if empty
+		//* Set allow_override if empty
 		if($web_rec['allow_override'] == '') {
 			$sql = "UPDATE web_domain SET allow_override = '".$app->db->quote($web_config["htaccess_allow_override"])."' WHERE domain_id = ".$this->id;
 			$app->db->query($sql);
 		}
-		if($web_rec['php_open_basedir'] == '') {
+		
+		//* Set php_open_basedir if empty or domain or client has been changed
+		if($web_rec['php_open_basedir'] == '' || 
+		($this->dataRecord["domain"] != '' && $this->oldDataRecord["domain"] != '' && $this->dataRecord["domain"] != $this->oldDataRecord["domain"]) ||
+		(isset($this->dataRecord["client_group_id"]) && $this->dataRecord["client_group_id"] != $this->oldDataRecord["sys_groupid"])) {
 			$document_root = $app->db->quote(str_replace("[client_id]",$client_id,$document_root));
 			$php_open_basedir = str_replace("[website_path]",$document_root,$web_config["php_open_basedir"]);
 			$php_open_basedir = $app->db->quote(str_replace("[website_domain]",$web_rec['domain'],$php_open_basedir));

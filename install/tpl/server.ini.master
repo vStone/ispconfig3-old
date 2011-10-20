@@ -13,6 +13,7 @@ hostname=server1.domain.tld
 nameservers=192.168.0.1,192.168.0.2
 loglevel=2
 backup_dir=/var/backup
+backup_dir_ftpread=n
 
 [mail]
 module=postfix_mysql
@@ -29,19 +30,26 @@ relayhost_user=
 relayhost_password=
 mailbox_size_limit=0
 message_size_limit=0
+realtime_blackhole_list=
 
 [getmail]
 getmail_config_dir=/etc/getmail
 
 [web]
+server_type=apache
 website_basedir=/var/www
 website_path=/var/www/clients/client[client_id]/web[website_id]
 website_symlinks=/var/www/[website_domain]/:/var/www/clients/client[client_id]/[website_domain]/
+website_symlinks_rel=n
 vhost_conf_dir=/etc/apache2/sites-available
 vhost_conf_enabled_dir=/etc/apache2/sites-enabled
+nginx_vhost_conf_dir=/etc/nginx/sites-available
+nginx_vhost_conf_enabled_dir=/etc/nginx/sites-enabled
 security_level=10
 user=www-data
 group=www-data
+nginx_user=www-data
+nginx_group=www-data
 apps_vhost_port=8081
 apps_vhost_ip=_default_
 apps_vhost_servername=
@@ -54,6 +62,13 @@ awstats_buildstaticpages_pl=/usr/share/awstats/tools/awstats_buildstaticpages.pl
 php_ini_path_apache=/etc/php5/apache2/php.ini
 php_ini_path_cgi=/etc/php5/cgi/php.ini
 check_apache_config=y
+enable_sni=y
+nginx_cgi_socket=/var/run/fcgiwrap.socket
+php_fpm_init_script=php5-fpm
+php_fpm_ini_path=/etc/php5/fpm/php.ini
+php_fpm_pool_dir=/etc/php5/fpm/pool.d
+php_fpm_start_port=9010
+php_fpm_socket_dir=/var/lib/php5-fpm
 
 [dns]
 bind_user=root
@@ -70,6 +85,7 @@ fastcgi_phpini_path=/etc/php5/cgi/
 fastcgi_children=8
 fastcgi_max_requests=5000
 fastcgi_bin=/usr/bin/php-cgi
+fastcgi_config_syntax=1
 
 [jailkit]
 jailkit_chroot_home=/home/[username]
@@ -84,3 +100,10 @@ config_dir=/etc
 init_script=cron
 crontab_dir=/etc/cron.d
 wget=/usr/bin/wget
+
+[rescue]
+try_rescue=n
+do_not_try_rescue_apache=n
+do_not_try_rescue_mysql=n
+do_not_try_rescue_mail=n
+

@@ -150,6 +150,8 @@ class tform {
 				if(isset($wb_global)) unset($wb_global);
 				
                 $this->wordbook = $wb;
+				
+				$this->dateformat = $app->lng('conf_format_dateshort');
 
                 return true;
         }
@@ -163,8 +165,12 @@ class tform {
         * @return record
         */
         function decode($record,$tab) {
-                if(!is_array($this->formDef['tabs'][$tab])) $app->error("Tab does not exist or the tab is empty (TAB: $tab).");
+                global $conf, $app;
+				if(!is_array($this->formDef['tabs'][$tab])) $app->error("Tab does not exist or the tab is empty (TAB: $tab).");
                 $new_record = '';
+				$table_idx = $this->formDef['db_table_idx'];
+				if(isset($record[$table_idx])) $new_record[$table_idx] = intval($record[$table_idx ]);
+				
 				if(is_array($record)) {
                         foreach($this->formDef['tabs'][$tab]['fields'] as $key => $field) {
                                 switch ($field['datatype']) {
@@ -198,7 +204,7 @@ class tform {
                                 break;
 
                                 case 'CURRENCY':
-                                        $new_record[$key] = number_format((double)$record[$key], 2, ',', '');
+                                        $new_record[$key] = $app->functions->currency_format($record[$key]);
                                 break;
 
                                 default:
@@ -235,11 +241,12 @@ class tform {
                         $table_idx = $this->formDef['db_table_idx'];
 						
 						$tmp_recordid = (isset($record[$table_idx]))?$record[$table_idx]:0;
+						//$tmp_recordid = intval($this->primary_id);
                         $querystring = str_replace("{RECORDID}",$tmp_recordid,$querystring);
 						unset($tmp_recordid);
 						
                         $querystring = str_replace("{AUTHSQL}",$this->getAuthSQL('r'),$querystring);
-
+						
                         // Getting the records
                         $tmp_records = $app->db->queryAllRecords($querystring);
                         if($app->db->errorMessage != '') die($app->db->errorMessage);
@@ -425,6 +432,7 @@ class tform {
 
                                                         // HTML schreiben
                                                         $out = '';
+                                                        $elementNo = 0;
                                                         foreach($field['value'] as $k => $v) {
 
                                                                 $checked = '';
@@ -432,7 +440,8 @@ class tform {
                                                                         if(trim($tvl) == trim($k)) $checked = ' CHECKED';
                                                                 }
                                                                 // $out .= "<label for=\"".$key."[]\" class=\"inlineLabel\"><input name=\"".$key."[]\" id=\"".$key."[]\" value=\"$k\" type=\"checkbox\" $checked /> $v</label>\r\n";
-																$out .= "<input name=\"".$key."[]\" id=\"".$key."[]\" value=\"$k\" type=\"checkbox\" $checked /> $v &nbsp;\r\n";
+																$out .= "<label for=\"".$key.$elementNo."\" class=\"inlineLabel\"><input name=\"".$key."[]\" id=\"".$key.$elementNo."\" value=\"$k\" type=\"checkbox\" $checked /> $v</label><br/>\r\n";
+                                                                $elementNo++;
                                                         }
                                                 }
                                                 $new_record[$key] = $out;
@@ -443,10 +452,12 @@ class tform {
 
                                                         // HTML schreiben
                                                         $out = '';
+                                                        $elementNo = 0;
                                                         foreach($field['value'] as $k => $v) {
                                                                 $checked = ($k == $val)?' CHECKED':'';
                                                                 //$out .= "<label for=\"".$key."[]\" class=\"inlineLabel\"><input name=\"".$key."[]\" id=\"".$key."[]\" value=\"$k\" type=\"radio\" $checked/> $v</label>\r\n";
-																$out .= "<input name=\"".$key."[]\" id=\"".$key."[]\" value=\"$k\" type=\"radio\" $checked/> $v\r\n";
+																$out .= "<label for=\"".$key.$elementNo."\" class=\"inlineLabel\"><input name=\"".$key."[]\" id=\"".$key.$elementNo."\" value=\"$k\" type=\"radio\" $checked/> $v </label>\r\n";
+                                                                $elementNo++;
                                                         }
                                                 }
                                                 $new_record[$key] = $out;
@@ -534,6 +545,7 @@ class tform {
 
                                                 // HTML schreiben
                                                 $out = '';
+                                                $elementNo = 0;
                                                 foreach($field['value'] as $k => $v) {
 
                                                         $checked = '';
@@ -541,7 +553,8 @@ class tform {
                                                                 if(trim($tvl) == trim($k)) $checked = ' CHECKED';
                                                         }
                                                         // $out .= "<label for=\"".$key."[]\" class=\"inlineLabel\"><input name=\"".$key."[]\" id=\"".$key."[]\" value=\"$k\" type=\"checkbox\" $checked /> $v</label>\r\n";
-														$out .= "<input name=\"".$key."[]\" id=\"".$key."[]\" value=\"$k\" type=\"checkbox\" $checked /> $v &nbsp;\r\n";
+														$out .= "<label for=\"".$key.$elementNo."\" class=\"inlineLabel\"><input name=\"".$key."[]\" id=\"".$key.$elementNo."\" value=\"$k\" type=\"checkbox\" $checked /> $v</label> &nbsp;\r\n";
+                                                        $elementNo++;
                                                 }
                                         }
                                         $new_record[$key] = $out;
@@ -552,10 +565,12 @@ class tform {
 
                                                 // HTML schreiben
                                                 $out = '';
+                                                $elementNo = 0;
                                                 foreach($field['value'] as $k => $v) {
                                                         $checked = ($k == $field["default"])?' CHECKED':'';
                                                         //$out .= "<label for=\"".$key."[]\" class=\"inlineLabel\"><input name=\"".$key."[]\" id=\"".$key."[]\" value=\"$k\" type=\"radio\" $checked/> $v</label>\r\n";
-														$out .= "<input name=\"".$key."[]\" id=\"".$key."[]\" value=\"$k\" type=\"radio\" $checked/> $v\r\n";
+														$out .= "<label for=\"".$key.$elementNo."\" class=\"inlineLabel\"><input name=\"".$key."[]\" id=\"".$key.$elementNo."\" value=\"$k\" type=\"radio\" $checked/> $v</label>\r\n";
+                                                        $elementNo++;
                                                 }
                                         }
                                         $new_record[$key] = $out;
@@ -587,7 +602,7 @@ class tform {
         * @param record = Datensatz als Array
         * @return record
         */
-        function encode($record,$tab) {
+        function encode($record,$tab,$dbencode = true) {
 			global $app;
 			
                 if(!is_array($this->formDef['tabs'][$tab])) $app->error("Tab is empty or does not exist (TAB: $tab).");
@@ -601,14 +616,14 @@ class tform {
                                 switch ($field['datatype']) {
                                 case 'VARCHAR':
                                         if(!@is_array($record[$key])) {
-												$new_record[$key] = (isset($record[$key]))?$app->db->quote($record[$key]):'';
+												$new_record[$key] = (isset($record[$key]))?$record[$key]:'';
                                         } else {
                                                 $new_record[$key] = implode($field['separator'],$record[$key]);
                                         }
                                 break;
                                 case 'TEXT':
                                         if(!is_array($record[$key])) {
-                                                $new_record[$key] = $app->db->quote($record[$key]);
+                                                $new_record[$key] = $record[$key];
                                         } else {
                                                 $new_record[$key] = implode($field['separator'],$record[$key]);
                                         }
@@ -623,11 +638,18 @@ class tform {
                                 break;
 								case 'DATE':
                                         if($record[$key] != '' && $record[$key] != '0000-00-00') {
-												$date_parts = date_parse_from_format($this->dateformat,$record[$key]);
-												//list($tag,$monat,$jahr) = explode('.',$record[$key]);
-                                                $new_record[$key] = $date_parts['year'].'-'.$date_parts['month'].'-'.$date_parts['day'];
-												//$tmp = strptime($record[$key],$this->dateformat);
-												//$new_record[$key] = ($tmp['tm_year']+1900).'-'.($tmp['tm_mon']+1).'-'.$tmp['tm_mday'];
+												if(function_exists('date_parse_from_format')) {
+													$date_parts = date_parse_from_format($this->dateformat,$record[$key]);
+													//list($tag,$monat,$jahr) = explode('.',$record[$key]);
+													$new_record[$key] = $date_parts['year'].'-'.$date_parts['month'].'-'.$date_parts['day'];
+													//$tmp = strptime($record[$key],$this->dateformat);
+													//$new_record[$key] = ($tmp['tm_year']+1900).'-'.($tmp['tm_mon']+1).'-'.$tmp['tm_mday'];
+												} else {
+													//$tmp = strptime($record[$key],$this->dateformat);
+													//$new_record[$key] = ($tmp['tm_year']+1900).'-'.($tmp['tm_mon']+1).'-'.$tmp['tm_mday'];
+													$tmp = strtotime($record[$key]);
+													$new_record[$key] = date('Y-m-d',$tmp);
+												}
                                         } else {
 											$new_record[$key] = '0000-00-00';
 										}
@@ -638,7 +660,7 @@ class tform {
                                         //if($key == 'refresh') die($record[$key]);
                                 break;
                                 case 'DOUBLE':
-                                        $new_record[$key] = $app->db->quote($record[$key]);
+                                        $new_record[$key] = $record[$key];
                                 break;
                                 case 'CURRENCY':
                                         $new_record[$key] = str_replace(",",".",$record[$key]);
@@ -666,8 +688,9 @@ class tform {
                                                 $this->errorMessage .= $this->wordbook[$errmsg]."<br />\r\n";
                                         }
                                 }
-
-
+								
+								//* Add slashes to all records, when we encode data which shall be inserted into mysql.
+								if($dbencode == true) $new_record[$key] = $app->db->quote($new_record[$key]);
                         }
                 }
                 return $new_record;
@@ -785,6 +808,36 @@ class tform {
 										  }
 										}
                                 break;
+								case 'ISIP':
+								//* Check if its a IPv4 or IPv6 address
+								if(function_exists('filter_var')) {
+									if(!filter_var($field_value,FILTER_VALIDATE_IP)) {
+										$errmsg = $validator['errmsg'];
+										if(isset($this->wordbook[$errmsg])) {
+											$this->errorMessage .= $this->wordbook[$errmsg]."<br />\r\n";
+										} else {
+											$this->errorMessage .= $errmsg."<br />\r\n";
+										}
+									}
+								} else {
+									//* Check content with regex, if we use php < 5.2
+									$ip_ok = 0;
+									if(preg_match("/^(\:\:([a-f0-9]{1,4}\:){0,6}?[a-f0-9]{0,4}|[a-f0-9]{1,4}(\:[a-f0-9]{1,4}){0,6}?\:\:|[a-f0-9]{1,4}(\:[a-f0-9]{1,4}){1,6}?\:\:([a-f0-9]{1,4}\:){1,6}?[a-f0-9]{1,4})(\/\d{1,3})?$/i", $field_value)){
+										$ip_ok = 1;
+									}
+									if(preg_match("/^[0-9]{1,3}(\.)[0-9]{1,3}(\.)[0-9]{1,3}(\.)[0-9]{1,3}$/", $field_value)){
+										$ip_ok = 1;
+									}
+									if($ip_ok == 0) {
+										$errmsg = $validator['errmsg'];
+										if(isset($this->wordbook[$errmsg])) {
+											$this->errorMessage .= $this->wordbook[$errmsg]."<br />\r\n";
+										} else {
+											$this->errorMessage .= $errmsg."<br />\r\n";
+										}
+									}
+								}
+                                break;
                                 case 'CUSTOM':
                                         // Calls a custom class to validate this record
                                         if($validator['class'] != '' and $validator['function'] != '') {
@@ -852,15 +905,7 @@ class tform {
                                                 if($field['formtype'] == 'PASSWORD') {
                                                         $sql_insert_key .= "`$key`, ";
                                                         if($field['encryption'] == 'CRYPT') {
-                                                                $salt="$1$";
-																$base64_alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-																for ($n=0;$n<8;$n++) {
-																	//$salt.=chr(mt_rand(64,126));
-																	$salt.=$base64_alphabet[mt_rand(0,63)];
-																}
-																$salt.="$";
-																// $salt = substr(md5(time()),0,2);
-																$record[$key] = crypt(stripslashes($record[$key]),$salt);
+																$record[$key] = $app->auth->crypt_password(stripslashes($record[$key]));
 																$sql_insert_val .= "'".$app->db->quote($record[$key])."', ";
 														} elseif ($field['encryption'] == 'MYSQL') {
 																$sql_insert_val .= "PASSWORD('".$app->db->quote($record[$key])."'), ";
@@ -887,15 +932,7 @@ class tform {
                                         } else {
                                                 if($field['formtype'] == 'PASSWORD') {
 														if(isset($field['encryption']) && $field['encryption'] == 'CRYPT') {
-                                                                $salt="$1$";
-																$base64_alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-																for ($n=0;$n<8;$n++) {
-																	//$salt.=chr(mt_rand(64,126));
-																	$salt.=$base64_alphabet[mt_rand(0,63)];
-																}
-																$salt.="$";
-																// $salt = substr(md5(time()),0,2);
-																$record[$key] = crypt(stripslashes($record[$key]),$salt);
+                                                                $record[$key] = $app->auth->crypt_password(stripslashes($record[$key]));
 																$sql_update .= "`$key` = '".$app->db->quote($record[$key])."', ";
 														} elseif (isset($field['encryption']) && $field['encryption'] == 'MYSQL') {
 																$sql_update .= "`$key` = PASSWORD('".$app->db->quote($record[$key])."'), ";

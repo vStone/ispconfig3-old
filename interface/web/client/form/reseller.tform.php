@@ -50,6 +50,17 @@ $form["auth_preset"]["perm_user"] = 'riud'; //r = read, i = insert, u = update, 
 $form["auth_preset"]["perm_group"] = 'riud'; //r = read, i = insert, u = update, d = delete
 $form["auth_preset"]["perm_other"] = ''; //r = read, i = insert, u = update, d = delete
 
+//* Load themes
+$themes_list = array();
+$handle = @opendir(ISPC_THEMES_PATH);
+while ($file = @readdir ($handle)) {
+    if (substr($file, 0, 1) != '.') {
+        if(@is_dir(ISPC_THEMES_PATH."/$file")) {
+            $themes_list[$file] = $file;
+        }
+    }
+}
+
 //* Languages
 $language_list = array();
 $handle = @opendir(ISPC_ROOT_PATH.'/lib/lang');
@@ -153,8 +164,8 @@ $form["tabs"]['address'] = array (
 		'usertheme' => array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'SELECT',
-			'default'	=> 'default',
-			'value'		=> array('default' => 'default'),
+			'default'	=> $conf["theme"],
+			'value'		=> $themes_list,
 			'separator'	=> '',
 			'width'		=> '30',
 			'maxlength'	=> '255',
@@ -209,7 +220,7 @@ $form["tabs"]['address'] = array (
 			'datatype'	=> 'VARCHAR',
 
 			'formtype'	=> 'SELECT',
-			'default'	=> 'DE',
+			'default'	=> $conf["country"],
 			'datasource'	=> array ( 	'type'	=> 'SQL',
 										'querystring' => 'SELECT iso,printable_name FROM country ORDER BY printable_name',
 										'keyfield'=> 'iso',
@@ -391,6 +402,20 @@ $form["tabs"]['limits'] = array (
 			'formtype'	=> 'TEXT',
 			'validators'	=> array ( 	0 => array (	'type'	=> 'ISINT',
 														'errmsg'=> 'limit_mailalias_error_notint'),
+									),
+			'default'	=> '-1',
+			'value'		=> '',
+			'separator'	=> '',
+			'width'		=> '10',
+			'maxlength'	=> '10',
+			'rows'		=> '',
+			'cols'		=> ''
+		),
+		'limit_mailaliasdomain' => array (
+			'datatype'	=> 'INTEGER',
+			'formtype'	=> 'TEXT',
+			'validators'	=> array ( 	0 => array (	'type'	=> 'ISINT',
+														'errmsg'=> 'limit_mailaliasdomain_error_notint'),
 									),
 			'default'	=> '-1',
 			'value'		=> '',
@@ -635,6 +660,20 @@ $form["tabs"]['limits'] = array (
 			'separator' => ',',
 			'value'		=> array('no' => 'None', 'jailkit' => 'Jailkit')
 		),
+		'limit_webdav_user' => array (
+			'datatype'	=> 'INTEGER',
+			'formtype'	=> 'TEXT',
+			'validators'	=> array ( 	0 => array (	'type'	=> 'ISINT',
+														'errmsg'=> 'limit_webdav_user_error_notint'),
+									),
+			'default'	=> '-1',
+			'value'		=> '',
+			'separator'	=> '',
+			'width'		=> '10',
+			'maxlength'	=> '10',
+			'rows'		=> '',
+			'cols'		=> ''
+		),
 		'default_dnsserver' => array (
 			'datatype'	=> 'INTEGER',
 			'formtype'	=> 'SELECT',
@@ -777,6 +816,31 @@ $form["tabs"]['limits'] = array (
 			'maxlength'	=> '10',
 			'rows'		=> '',
 			'cols'		=> ''
+		),
+		'limit_openvz_vm' => array (
+			'datatype'	=> 'INTEGER',
+			'formtype'	=> 'TEXT',
+			'validators'	=> array ( 	0 => array (	'type'	=> 'ISINT',
+														'errmsg'=> 'limit_openvz_vm_error_notint'),
+									),
+			'default'	=> '0',
+			'value'		=> '',
+			'separator'	=> '',
+			'width'		=> '10',
+			'maxlength'	=> '10',
+			'rows'		=> '',
+			'cols'		=> ''
+		),
+		'limit_openvz_vm_template_id' => array (
+			'datatype'	=> 'INTEGER',
+			'formtype'	=> 'SELECT',
+			'default'	=> '',
+			'datasource'	=> array ( 	'type'	=> 'SQL',
+										'querystring' => 'SELECT template_id,template_name FROM openvz_template WHERE 1 ORDER BY template_name',
+										'keyfield'=> 'template_id',
+										'valuefield'=> 'template_name'
+									 ),
+			'value'		=> array(0 => ' ')
 		),
 	##################################
 	# END Datatable fields

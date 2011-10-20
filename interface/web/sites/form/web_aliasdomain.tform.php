@@ -106,13 +106,13 @@ $form["tabs"]['domain'] = array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'SELECT',
 			'default'	=> 'y',
-			'value'		=> array('' => 'no_redirect_txt', 'no' => 'no_flag_txt', 'R' => 'R', 'L' => 'L', 'R,L' => 'R,L')
+			'value'		=> array('' => 'no_redirect_txt', 'no' => 'no_flag_txt', 'R' => 'R', 'L' => 'L', 'R,L' => 'R,L', 'last' => 'last', 'break' => 'break', 'redirect' => 'redirect', 'permanent' => 'permanent')
 		),
 		'redirect_path' => array (
 			'datatype'	=> 'VARCHAR',
 			'formtype'	=> 'TEXT',
 			'validators'	=> array ( 	0 => array (	'type'	=> 'REGEX',
-														'regex' => '@^(([.]{0})|(https?://([-\w\.]+)+(:\d+)?(/([\w/_\.\-\,\+\?]*(\?\S+)?)?)?)|(/[\w/_\.\-]{1,255}/))$@',
+														'regex' => '@^(([.]{0})|(https?://([-\w\.]+)+(:\d+)?(/([\w/_\.\-\,\+\?\~]*(\?\S+)?)?)?)|(\[scheme\]://([-\w\.]+)+(:\d+)?(/([\w/_\.\-\,\+\?\~]*(\?\S+)?)?)?)|(/[\w/_\.\-]{1,255}/))$@',
 														'errmsg'=> 'redirect_error_regex'),
 									),
 			'default'	=> '',
